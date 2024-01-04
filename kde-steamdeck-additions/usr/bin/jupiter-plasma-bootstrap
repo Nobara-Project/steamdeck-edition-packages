@@ -1,0 +1,36 @@
+#!/bin/bash
+
+set -eo pipefail
+
+if [[ "${XDG_SESSION_TYPE}" = "wayland" ]]; then
+  # Try to wait for kscreen to be ready.  This was mostly a hack to try to make the below bug not happen, but I'm afraid
+  # to remove it because this weird bug has caused hours of grief.
+  i=0
+  while (( ++i < 5 )) && ! kscreen-console outputs; do
+    sleep 5
+  done
+
+  # Then try to fix the config
+  #
+  # There is some fun/insane bug where if kscreen hasn't evaluated connected displays yet, doing that at the same time as
+  # asking it to set the rotation causes it to racily either ignore you, or somehow do two modesets in such a way as to
+  # break the amdgpu driver and disable the screen for this X11 session.  Really.  Wayland seems fine.
+  #
+  # But if you ask for a nonsense rotation, it will guarantee it has evaluated the new display and added it to the config
+  # (before failing because foo isn't a rotation).  Ha-ha, software!
+  kscreen-doctor output.eDP-1.rotation.foo || true
+  kscreen-doctor output.eDP.rotation.foo || true
+  # In wayland mode the display is named after some EDID identifier and not the output, but "1" works there, and hopefully
+  # is the internal screen oh boy.
+
+  # Try to wait for kscreen to be ready
+  i=0
+  while (( ++i < 5 )) && ! kscreen-console json; do
+    sleep 5
+  done
+
+  # Then try to fix the config
+  kscreen-doctor output.eDP.rotation.right \
+    || kscreen-doctor output.eDP-1.rotation.right \
+    || true
+fi

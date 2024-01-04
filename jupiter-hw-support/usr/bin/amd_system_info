@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# script from AMD to use when reporting bugs to them
+
+BIOS=`sudo dmidecode -s bios-version`
+KERNEL=`uname -r`
+MESA=`pacman -Qs mesa|grep mesa-driver| tail -1|cut -d' ' -f2`
+
+echo
+echo "BIOS: "${BIOS}
+echo "KERNEL:"${KERNEL}
+echo "MESA:  "${MESA}
+echo
+cat /etc/steamos-release
+echo
+cat /etc/os-release
+echo
+cat /etc/lsb-release
+echo
+echo "Firmware:"
+sudo cat /sys/kernel/debug/dri/0/amdgpu_firmware_info| grep -v 0x00000000$

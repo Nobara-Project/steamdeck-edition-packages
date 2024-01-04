@@ -1,0 +1,16 @@
+#!/bin/bash
+
+set -e
+
+product_serial="$(cat /sys/devices/virtual/dmi/id/product_serial)"
+
+# Cutoff time for supported prototypes
+product_year="${product_serial:4:1}"
+product_week="${product_serial:5:2}"
+if [[ "$product_year" -eq "1" && "$product_week" -lt "33" ]]; then
+    echo "Supported: no"
+    exit 1
+fi
+
+echo "Supported: yes"
+exit 0

@@ -1,0 +1,16 @@
+#!/usr/bin/bash
+
+# Hook for custom OS script
+# This sets the default session before we restart the
+# desktop manager in order to auto-login to that session.
+GAMESCOPE_SESSION_SCRIPT="/usr/libexec/os-session-select"
+if [ -f $GAMESCOPE_SESSION_SCRIPT ] ; then
+       # Call session script from the OS
+       ${GAMESCOPE_SESSION_SCRIPT} $@
+fi
+
+# shutdown steam
+steam -shutdown
+# make sure all wine processes are DEAD dead.
+kill -9 $(ps -ef | grep -E -i '(wine|processid|\.exe)' | awk '{print $2}')
+systemctl --user stop gamescope-session-plus@steam.service

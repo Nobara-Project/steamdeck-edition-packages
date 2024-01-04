@@ -1,0 +1,311 @@
+#!/bin/bash
+
+set -euo pipefail
+
+info() { printf "%s\n" "$*" >&2; }
+die() { info "!! $*"; exit 1; }
+
+# Is this an EV2 or older unit
+is_ev2() {
+  local product_serial
+  product_serial="$(cat /sys/devices/virtual/dmi/id/product_serial)"
+  local product_year="${product_serial:4:1}"
+  local product_week="${product_serial:5:2}"
+
+  [[ "$product_year" -eq "1" && "$product_week" -lt "33" ]]
+}
+
+##
+## These can be set in the environment to tweak behavior
+##
+# If set to 1 disable the "don't run if we're an oobe build" logic
+JUPITER_CONTROLLER_UPDATE_IN_OOBE=${JUPITER_CONTROLLER_UPDATE_IN_OOBE:-0}
+# Override the default firmware location
+JUPITER_CONTROLLER_UPDATE_FIRMWARE_DIR=${JUPITER_CONTROLLER_UPDATE_FIRMWARE_DIR-}
+
+# All timestamps used below are 8-char HEX strings w/o leading "0x"
+
+FIRMWARE_DIR=${JUPITER_CONTROLLER_UPDATE_FIRMWARE_DIR:-/usr/share/jupiter_controller_fw_updater}
+
+# Build Date: Mon Dec 11 13:24:02 PST 2023
+CURRENT_D21_FW_TS=65777DF2
+CURRENT_D20_FW_TS=65777DF3
+CURRENT_RA4_FW_TS=65777DF1
+
+CURRENT_FW_FILE_D21="$FIRMWARE_DIR"/D21_APP_REL_${CURRENT_D21_FW_TS}.bin
+CURRENT_FW_FILE_D20="$FIRMWARE_DIR"/D20_APP_REL_${CURRENT_D20_FW_TS}.bin
+CURRENT_FW_FILE_RA4="$FIRMWARE_DIR"/RA_APP_REL_${CURRENT_RA4_FW_TS}.bin
+
+if is_ev2; then
+  # Last working firmware for JUPITER EV2. For older units we no longer support. 
+  # Only needed for D21 units (all we built during this period
+  # D21 Date 8-Jul-2022
+  CURRENT_D21_FW_TS=62C853C3
+  CURRENT_FW_FILE_D21="$FIRMWARE_DIR"/JUP_EV2_REL_62C853C3.bin
+fi
+
+FIRMWARE_TOOL_TYPE_1="$FIRMWARE_DIR"/d21bootloader16.py
+FIRMWARE_TOOL_TYPE_2="$FIRMWARE_DIR"/d20bootloader.py
+FIRMWARE_TOOL_TYPE_3="$FIRMWARE_DIR"/d20bootloader.py
+
+# Start with this tool -- it will suffice for getting the HW ID which is required
+FIRMWARE_TOOL=$FIRMWARE_TOOL_TYPE_1
+
+JQ=jq
+checkmode=""
+
+if [[ $# -eq 1 && ${1-} = "--check" ]]; then
+  checkmode=1
+elif [[ $# -ne 0 ]]; then
+  die "Usage: $0 [--check]"
+fi
+
+###############################################################################################################################
+# STAGE 1: Determine device type
+###############################################################################################################################
+devs=$("$FIRMWARE_TOOL" getdevicesjson) || die "Failed to enumerate devices"
+devjq() { $JQ "$@" <<< "$devs"; }
+
+# Is the first device enumerating as a Bootloader?
+bootloader=$(devjq '.[0].is_bootloader | select(. != null)')
+
+# If multiple devices, no action if not bootloader (some dev situation w/ multiple controllers?)
+# The Type 2 bootloader presents as 2x interfaces, so don't exit if this looks like a bootloader.
+count=$(devjq 'length')
+if [[ $count -gt 1 && $bootloader = "false" ]]; then
+  info "Multiple devices found, not performing check/update:"
+  devjq >&2
+  exit 1
+elif [[ $count -lt 1 ]]; then
+  die "No compatible devices found"
+fi
+
+# Parse out the primary and secondary timestamps and convert to 8-character uppercase as we'll be doing 
+# string comparisons below.
+null_build_timestamp="00000000"
+
+build_timestamp=$(printf "%08X" $(devjq '.[0].build_timestamp | select(. != null)'))
+secondary_build_timestamp=$(printf "%08X" $(devjq '.[0].secondary_build_timestamp | select(. != null)'))
+
+info "PTS: ${build_timestamp}, STS: ${secondary_build_timestamp}"
+
+# Determine the bootloader type (1,2,3) This is indicated by major release # of USB device (vs. 1 for older, 2 hybrid, 3 for RA). 
+# This value must be presented properly by both the FW applications and bootloaders to work properly.
+release_number=$(devjq '.[0].release_number')
+major_release=$((release_number>>8))    # Shift to reserve only major version byte
+
+bootloader_type=1
+if [[ $major_release -eq 2 ]]; then
+  bootloader_type=2
+  FIRMWARE_TOOL=$FIRMWARE_TOOL_TYPE_2
+elif [[ $major_release -eq 3 ]]; then
+  bootloader_type=3
+  FIRMWARE_TOOL=$FIRMWARE_TOOL_TYPE_3
+fi
+
+###############################################################################################################################
+# STAGE 1b: Do not do anything presently w/ Type 3 units: ENABLE this exit for Stable Hotfix
+###############################################################################################################################
+#if [[ $bootloader_type} -eq 3 ]]; then
+#  exit 0
+#fi
+
+devjq >&2
+
+###############################################################################################################################
+# STAGE 2: Now check if we need to update or not.
+###############################################################################################################################
+needs_update=0
+
+# In OOBE builds, we only want to attempt to touch the firmware if it looks to be in the bootloader.
+# Else, leave everything be, and let the subsequent update do the first firmware-touching.
+if [[ $JUPITER_CONTROLLER_UPDATE_IN_OOBE -ne 1 && -e /etc/steamos-oobe-image && $bootloader != "true" ]]; then
+  exit 0
+fi
+
+# On galileo units, we do not want to do automated updates until the initial prompt about firmware updates has been
+# presented.  If the device is stuck in bootloader, though, bypass this.
+initial_update_ret=0
+jupiter-initial-firmware-update check || initial_update_ret=$?
+
+if [[ $initial_update_ret -eq 7 && $bootloader != "true" ]]; then
+  info "Galileo device that hasn't prompted for initial firmware yet, not performing updates"
+  info "  run with JUPITER_IGNORE_INITIAL_FIRMWARE_UPDATE=1 to bypass this"
+  exit 0
+fi
+
+# If Primary MCU is in bootloader, then always update
+if [[ $bootloader = "true" ]]; then
+    info "Device is in bootloader mode, update required"
+    needs_update=1
+
+# If either timestamp is 0 in non-Type 3 units (Only check dual MCU Types (1 and 2))    
+elif [[ $build_timestamp == $null_build_timestamp ]] || [[ $secondary_build_timestamp == $null_build_timestamp ]] && [[ $bootloader_type -ne 3 ]]; then
+    info "Device has missing build timestamp, update required"
+    needs_update=1
+
+# Type 1: Check D21 FW timestamp
+elif [[ $bootloader_type -eq 1 ]]; then
+
+    if [[ ${build_timestamp} == ${CURRENT_D21_FW_TS} ]]; then
+      info "NO UPDATE: Type 1 device is running latest build $CURRENT_D21_FW_TS"
+    else
+      needs_update=1
+      info "UPDATE: Type 1 device is running build $build_timestamp, updating to build $CURRENT_D21_FW_TS"
+    fi
+
+# Type 2: Check both primary and secondary timestamps. We're not going to determine Type 2 a or b sub-types
+elif [[ $bootloader_type -eq 2 ]]; then
+
+    if [[ $build_timestamp == $CURRENT_D21_FW_TS ]] && [[ $secondary_build_timestamp == $CURRENT_D21_FW_TS || $secondary_build_timestamp == $CURRENT_D20_FW_TS ]]; then
+      info "NO UPDATE: Type 1/2 Device is running latest build $CURRENT_D21_FW_TS"
+    else
+      needs_update=1
+      info "UPDATE: Type 1/2 Device is running builds $build_timestamp | $secondary_build_timestamp, updating to build ($CURRENT_D21_FW_TS | $CURRENT_D21_FW_TS or $CURRENT_D20_FW_TS)"
+    fi
+
+# Type 3: Check the single-MCU's timesamp
+elif [[ $bootloader_type -eq 3 ]]; then
+    if [[ $build_timestamp == $CURRENT_RA4_FW_TS ]]; then
+      info "NO UPDATE: Type 3 Device is running latest build $CURRENT_RA4_FW_TS"
+    else
+      needs_update=1
+      info "UPDATE: Type 3 Device is running build $build_timestamp, updating to build $CURRENT_RA4_FW_TS"
+    fi
+
+else
+    info "EXIT: Unknown Device Type ${bootloader_type}"
+    exit 0
+fi
+
+# If no update needed, then done.
+if [[ $needs_update -eq 0 ]]; then
+    echo "needs_update=0"
+   exit 0
+fi
+
+###############################################################################################################################
+# STAGE 3: Perform the update
+###############################################################################################################################
+
+# If Type 2 BL, we need the HW ID to determine if the secondary controller is D21 or D20
+#   For Type 1 bootloader we have all the info we need. Only the orig. D21 / D21 system has that BL
+#   Orig    D21/D21 system     Type 1 BL, Primary HWID = 27 (provided for reference)
+#   Hyb     D21 / D20 system   Type 2 BL, Primary HWID = 30  
+#   Hom     D21 / D21 system   Type 2 BL, Primary HWID = 31
+#   Gal Hom D21 / D21 system   Type 2 BL, Primary HWID = 32 
+hybrid=false
+if [[ $bootloader_type -eq 2 ]]; then
+  hwid=$("$FIRMWARE_TOOL" gethwid --clean) || die "Failed to get HW ID"
+  info "HWID: ${hwid}"
+  if [[ $hwid -eq 30 ]]; then
+    hybrid=true
+  elif [[ $hwid -eq 31 || $hwid -eq 32 ]]; then
+    hybrid=false
+  else 
+    die "Type 2 BL found w/ unknown Primary HWID: ${hwid}"
+  fi
+fi
+
+info "Found candidate device, build timestamp ${build_timestamp:-unknown}, BL $bootloader, BL_Type $major_release, HYB ${hybrid}"
+
+# Done if check mode
+if [[ -n $checkmode ]]; then
+  info "  --check specified, not performing update"
+  echo "needs_update=${needs_update}"
+  if [[ ${bootloader_type} -eq 1 ]]; then
+    echo "time_estimate=25"
+  elif [[ ${bootloader_type} -eq 2 ]]; then
+    echo "time_estimate=70"
+  elif [[ ${bootloader_type} -eq 3 ]]; then
+    echo "time_estimate=40"
+  else 
+    die "Unknown Bootloader Type"
+  fi
+
+  if [[ $bootloader = "true" ]]; then
+    "$FIRMWARE_TOOL" reset 
+  fi
+  # status code 7 to determine update-needed in check mode, vs general failure
+  exit 7
+fi
+
+# Otherwise, perform the udpate.
+# Add a handler to stop the updater if we die while it is running
+#  (because we can be run as a service, and get SIGTERM'd. The shell does not kill the foreground process in this case.)
+unset update_pid
+
+on_error() {
+  ret=$?
+  if [[ -n ${update_pid-} ]]; then
+    info "Interrupted, killing update process $update_pid"
+    kill $update_pid
+    wait
+    info "Update failed, attempting to reset controller..."
+    "$FIRMWARE_TOOL" reset || true
+  fi
+  info "!! Failed to apply firmware update, see above"
+  exit $ret
+}
+trap on_error SIGINT SIGKILL SIGTERM
+
+run_firmware_tool() {
+  ARGS=("$@")
+
+  # Allow for a number of retries
+  retry_attempt=0
+  until [ "$retry_attempt" -ge 3 ]; do
+    "${FIRMWARE_TOOL}" "${ARGS[@]}" &
+    update_pid=$!
+    last_status=0
+    wait $update_pid || last_status=$?
+    unset update_pid
+
+    #info "FW Update returned: $last_status"
+    if [ $last_status -eq 0 ]; then
+      break
+    fi
+
+    ((retry_attempt+=1))
+    info "FW update failed. Retrying... Count: $retry_attempt"
+    sleep 3
+  done
+
+  if [ "$last_status" -ne 0 ]; then
+    info "FW update out of retries"
+    info "!! Failed to apply firmware update, see above"
+    "$FIRMWARE_TOOL" reset 
+    exit $last_status
+  fi
+}
+
+# The background+wait is so our exit handler above can kill it if the script itself is asked to stop.  Because bash.
+if   [[ $bootloader_type -eq 1 ]]; then
+  info "Updating Type 1 System"
+  run_firmware_tool program "$CURRENT_FW_FILE_D21"
+  info "Firmware updated to $CURRENT_D21_FW_TS"
+
+elif   [[ $bootloader_type -eq 3 ]]; then
+  info "Updating Type 3 System"
+  run_firmware_tool program "$CURRENT_FW_FILE_RA4"
+  info "Firmware updated to $CURRENT_RA4_FW_TS"
+
+elif [[ $bootloader_type -eq 2 ]]; then
+
+  if [[ $hybrid = "true" ]]; then
+    info "Updating Hybrid SECONDARY of Type 2 System"
+    run_firmware_tool program --secondary "$CURRENT_FW_FILE_D20"
+  else
+    info "Updating Homogeneous SECONDARY of Type 2 System"
+    run_firmware_tool program --secondary "$CURRENT_FW_FILE_D21"
+  fi
+
+  info "Updating PRIMARY of Type 2 System"
+  run_firmware_tool program --primary "$CURRENT_FW_FILE_D21"
+ info "Firmware updated to $CURRENT_D21_FW_TS"
+
+else
+  info "Unknown System Type " + $bootloader_type
+fi
+
+trap - EXIT

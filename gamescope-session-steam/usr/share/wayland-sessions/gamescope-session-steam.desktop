@@ -1,0 +1,7 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=Steam Deck Mode
+Comment=Steam Deck Mode
+Exec=gamescope-session-plus steam
+Type=Application
+DesktopNames=gamescope

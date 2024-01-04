@@ -1,0 +1,142 @@
+SOFTWARE LICENSE AGREEMENT
+
+This Software License Agreement (this “Agreement”) is entered into and made effective as of the Effective Date, by and between:
+“Renesas”
+Renesas Electronics Corporation, a Japanese corporation having a principal place of business at 2-24, 3chome, Toyosu, Koto-ku, Tokyo 135-0061, Japan; and 
+“LICENSEE”
+Both the individual using or installing the Licensed Software and the company or other legal entity on behalf of which such individual is acting.
+
+	
+SECTION 1.  (DEFINITIONS)
+
+As used herein, the following terms shall have the meanings set forth below:
+(1) "Licensed Software" means Renesas Flash Programmer (RFP), a Renesas software which are used to write data into on-chip flash memory of Renesas microcontrollers. Licensed Software are provided in object code format.
+(2) "User's Manual" means the user’s manual for the Licensed Software.
+(3) “Program Product” means the Licensed Software and User’s Manual, collectively (including its reproductions created by exercising the right granted to LICENSEE under this Agreement.).
+(4) "Effective Date" means the date which this Agreement become effective.
+(5) "Open Source Software" means a software (including, but not limited to, GPL (GNU general public license)) which, as a condition of use of the software, a person who performs certain act (such as distribution or utilization of the software to a third party, including derivative software) is required to disclose the source code of the software to the third party. In this item, "third party" includes any and all person who has been disclosed or distributed, directly or indirectly, from a person who discloses or distributes the software.
+(6) "Package" means a support package of the Program Product which includes license certificate. LICENSEE shall purchase the Package in separate from this Agreement to receive technical support of the Program Product.
+(7) “Designated Number” means the number of computers which are authorized to LICENSEE by Renesas to use the Licensed Software under this Agreement.  The Designated Number shall be set forth in the license certificate to be issued by Renesas if the Packages are purchased by LICENSEE, and if no Package is purchased, shall be one (1).
+
+SECTION 2.  (LIMITED LICENSE)	
+
+2.1	Subject to the terms and conditions set forth herein, during the term of this Agreement, Renesas grants to LICENSEE a limited, non-exclusive, non-sublicensable, non-transferable and royalty-free rights:
+(1) to incorporate the Licensed Software into the Designated Number of computer systems (limited to those operated by the operating system specified in User’s Manual and designated by Renesas ("Designated OS")) ("Specified System") and to execute on the Specified Systems.
+(2) to reproduce the Licensed Software, provided only to the extend for the purpose of back-up or exercising its right granted under item (1) above.
+(3) to reproduce and use the User's Manual, provided only to the extent reasonably necessary to exercise its rights granted under item (1) and (2) above.
+2.2	LICENSEE may exercise its rights set forth in preceding Section 2.1 only for the purpose to develop software to be used in Renesas products.
+2.3	LICENSEE shall attach the same copyright, trademark or other proprietary notices in the Program Product on and into its copies, and shall not erase, rewrite, remove or alter any such copyrights or indications.
+2.4	Except as expressly provided in this section, this Agreement does not grant LICENSEE any right on the Program Product. LICENSEE must execute a separate license agreement for any use of the Program Product not authorized under this Agreement. 
+
+SECTION 3.  (LICENSEE’S OBLIGATION)
+
+3.1	LICENSEE shall not:
+(1) incorporate to or use the Program Product on Specified System(s) beyond the Designated Number;
+(2) use the Program Product on the Specified System operated by the operating system other than the Designated OS; or
+(3) use the Program Product on the computer system(s) other than the Specified System.
+3.2	LICENSEE shall not reverse engineer, disassemble, decompile or otherwise analyze the Licensed Software.
+3.3	LICENSEE shall not remodel, modify or otherwise make any changes to the Program Products.
+3.4	LICENSEE acknowledges and agrees that the Licensed Software may contain certain Open Source Software subject to the terms and conditions of the applicable open source licenses.  LICENSEE acknowledges and agrees that LICENSEE’s use of such Open Source Software is governed by the applicable open source license terms and that, subject to applicable law, Renesas has no obligation or liability with respect to such Open Source Software under this Agreement.  In addition, LICENSEE will not (and will not permit any third party to) use any Open Source Software in a manner that would require the Licensed Software (or any portion thereof) to be distributed or made available free of charge, in source code form, or under any open source license terms.  To the extent that any of the terms and conditions of this Agreement that govern LICENSEE’s use of the Licensed Software conflict with, or are in addition to, the terms and conditions of any Open Source Software, the conflicting or additional terms and conditions will not apply to such Open Source Software and the terms and conditions of the applicable Open Source Software will take precedence.
+
+SECTION 4.  (OWNERSHIP)
+
+4.1	Nothing contained herein shall in any way transfer or deemed to transfer to LICENSEE any of Renesas’s title, interest or any other intellectual property rights (including copyright) regarding or in relation to the Program Product. ~
+4.2	Notwithstanding anything provided in this Agreement, Renesas and its licensors own all right, title and interest in and to the Licensed Software and any derivative works thereof, including all intellectual property rights thereto.  LICENSEE shall not acquire or own any other rights, express or implied, in the Licensed Software other than those rights expressly granted under this Agreement. 
+
+SECTION 5.  (REPRESENTATIONS & WARRANTIES; DISCLAIMER; LIMITATION OF LIABILITY;  INDEMNIFICATION)
+
+5.1	Each party represents, warrants and covenants to the other party that: (a) the execution, delivery and performance of this Agreement has been duly authorized by all necessary corporate action, if applicable; and (b) the individual accepting the terms of this Agreement has the power, authority and legal right to enter into this Agreement on behalf of LICENSEE; and (c) this Agreement, when executed and delivered by the representing and warranting party in accordance with the terms of this Agreement, will be the legal, valid, and binding obligation of such party, and enforceable in accordance with its terms.
+5.2	THE LICENSED SOFTWARE IS PROVIDED “AS IS” AND RENESAS MAKES NO, AND TO THE FULLEST EXTENT PERMITTED UNDER APPLICABLE LAW HEREBY DISCLAIMS, ALL REPRESENTATIONS AND WARRANTIES, WHETHER EXPRESS, IMPLIED OR STATUTORY, INCLUDING WITHOUT LIMITATION ANY WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, SATISFACTORY QUALITY, ACCURACY, TITLE AND NON-INFRINGEMENT, AND ANY WARRANTIES THAT MAY ARISE FROM COURSE OF PERFORMANCE, COURSE OF DEALING OR USAGE OF TRADE.  Except as otherwise prohibited by applicable law, Renesas does not warrant that the operation of the Licensed Software will be uninterrupted or error-free.
+5.3	TO THE FULLEST EXTENT PERMITTED BY APPLICABLE LAW AND NOTWITHSTANDING ANY FAILURE OF ESSENTIAL PURPOSE OF ANY LIMITED REMEDY OR LIMITATION OF LIABILITY: (A) IN NO EVENT WILL RENESAS BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, EXEMPLARY OR PUNITIVE DAMAGES, OR DAMAGES FOR LOSS OF BUSINESS, CUSTOMERS, USE, PROFITS, REVENUE, SAVINGS OR DATA, OR COST OF SUBSTITUTE PROCUREMENT, INCURRED BY LICENSEE OR ANY THIRD PARTY, REGARDLESS OF THE FORM OF ACTION, WHETHER BASED IN CONTRACT, TORT, STATUTE OR OTHERWISE, AND EVEN IF RENESAS HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES OR IF SUCH DAMAGES ARE FORESEEABLE; AND (B) IN NO EVENT WILL RENESAS’ AGGREGATE LIABILITY ARISING FROM OR RELATING TO THIS AGREEMENT, THE LICENSED SOFTWARE OR OTHER SUBJECT MATTER HEREOF EXCEED ZERO DOLLARS ($0).  The parties acknowledge that the limitations of liability in this Section 5.3 and in the other provisions of this Agreement and the allocation of risk herein are an essential element of the bargain between the parties, without which Renesas would not have entered into this Agreement.
+5.4	LICENSEE shall indemnify, defend, and hold harmless Renesas and its affiliates and its and their officers, directors, shareholders, employees, agents, licensors, distributors and suppliers from and against any and all claims, demands, actions, losses, liabilities, settlements, expenses (including without limitation attorneys’ fees and other costs of litigation), and causes of action arising out of or relating to LICENSEE’s use or misuse of the Licensed Software or LICENSEE’s breach or alleged breach of this Agreement.
+
+SECTION 6.  (CONFIDENTIALITY)
+
+6.1	LICENSEE shall; (a) hold any information disclosed by Renesas in relation to this Agreement (“Confidential Information”) in confidence, using the same degree of care it uses to protect the confidentiality of its own information of a similar nature and importance, but in no event less than reasonable care, to protect the confidentiality and avoid the unauthorized use and disclosure of the Confidential Information; (b) not disclose or make available the Confidential Information to any third party without the prior written consent of Renesas; and (c) not use the Confidential Information for any purpose other than implementing this Agreement.  Notwithstanding the foregoing sentences, information listed the following items is not considered as the Confidential Information:
+(1) Information with the prior written consent of Renesas to disclose such information;
+(2) Information that is rightfully owned by LICENSEE at the time of disclosure;
+(3) Information that is rightfully obtained by LICENSEE without a duty of confidentiality from a source other than Renesas that does not owe any duty of confidentiality to Renesas with respect to such Confidential Information;
+(4) Information that is publicly known at the time of disclosure;
+(5) Information that becomes publicly known through no wrongful act or omission of LICENSEE; and
+(6) Information that is independently developed by LICENSEE without reference to or use of the Confidential Information of Renesas.
+6.2	The Program Product is deemed to be the Confidential Information of Renesas. 
+6.3	Notwithstanding the provisions in paragraph 1 above, LICENSEE may disclose the Confidential Information in case where LICENSEE is legally compelled to disclose such Confidential Information by orders or requests of a competent court or governmental authorities, provided, that LICENSEE shall give Renesas reasonable advance notice of any such disclosure and shall cooperate with Renesas in obtaining a protective order narrowing the scope of such disclosure and/or use of the Confidential Information.  
+
+SECTION 7.  (COMPLIANCE WITH EXPORT CONTROL)
+
+LICENSEE represents, warrants, and covenants that LICENSEE will not use the Licensed Software for the purposes of disturbing international peace and security, including (i) the design, development, production, stockpiling or use of weapons of mass destruction such as nuclear, chemical or biological weapons or missiles, (ii) the other military activities, or (iii) any use supporting these activities.  LICENSEE further represents, warrants, and covenants that LICENSEE shall not sell, export, dispose of, license, rent, transfer, disclose or otherwise provide the Licensed Software to any third party, whether directly or indirectly, with knowledge or reason to know that the third party or any other party will engage in the activities described above. LICENSEE further represents, warrants, and covenant that LICENSEE will comply fully with all relevant export laws and regulations (collectively “Export Controls”).  Without limiting the generality of the foregoing, LICENSEE will not, and LICENSEE will require LICENSEE’s representatives not to, export, direct or transfer the Licensed Software, or any direct product thereof, to or use the Licensed Software in any destination, person or entity restricted or prohibited by any applicable export controls.  LICENSEE represents and warrants that LICENSEE is not such a person and is not located in, under the control of, or a national or resident of any such destination or entity.
+
+SECTION 8.  (ELIMINATION OF ANTISOCIAL FORCES)
+
+Renesas may terminate this Agreement at any time without any prior notification in the event that LICENSEE’s affiliates, employees, directors or officers are found to: (a) belong to, or be otherwise involved in, organized crime groups, racketeers or any other entity related to organized crime group (“Anti-Social Forces”); (b) provide funds, or provide services, to any Anti-Social Forces; (c) have any other relationship with any Anti-Social Forces; or (d) use threatening behavior or violence in business transactions, disseminate false information, employ fraudulent means or methods that obstruct the business operations of Renesas, or use any other behavior that is similar to these actions. Where this Agreement is terminated for a reason set out in this provision, Renesas is not responsible for any losses or damages suffered by you as a result of such termination.
+
+SECTION 9.  (TERMINATION)
+
+Renesas may immediately terminate this Agreement by sending a written notice to LICENSEE in the event that:
+(1) LICENSEE’s material breach of its obligation under this Agreement, or LICENSEE’s breach of its obligation under this Agreement and fails to cure such breach within thirty (30) days from the receipt of notice from Renesas;
+(2) LICENSEE is adjudicated a bankrupt, becomes insolvent, makes a general assignment for the benefit of creditors, or enters into dissolution or liquidation proceedings;
+(3) LICENSEE undergoes a substantial change in ownership (whether resulting from merger, acquisition, consolidation or otherwise), or any other person or company de facto controls the operations or policies of LICENSEE; or
+(4) LICENSEE transfers major part of its business to any third party.
+
+SECTION 10.  (TERM)
+
+This Agreement becomes effective on the Effective Date and shall survive unless terminated by Renesas or LICENSE, provided however, if Renesas, at its sole discretion, decides to no longer provide the Program Product, this Agreement shall terminate five (5) years from such date of decision.
+
+SECTION 11.  (EFFECTS OF TERMINATION)
+
+11.1	Upon any termination or expiration of this Agreement, the license and rights granted to LICENSEE under this Agreement will terminate, LICENSEE will cease all use of the Licensed Software, and LICENSEE shall within one (1) month from the termination;
+(1) destroy any and all copies of the Program Product, Confidential Information and any other technical information provided from Renesas under this Agreement; and 
+(2) provide Renesas a document certifying the destruction.
+11.2	The provisions in Sections 2.4, 3, 4, 5, 6, 7, 12,13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23 and this Section shall survive expiration or termination of this Agreement for any reason.
+
+SECTION 12.  (ASSIGNMENT)
+
+LICENSEE may not assign, sell, transfer, delegate or otherwise dispose of, whether voluntarily or involuntarily, by merger, change of control, operation of law or otherwise, this Agreement or any rights or obligations under this Agreement without the prior written consent of Renesas.  Any purported assignment, transfer or delegation by LICENSEE will be null and void.  Renesas may assign, sell, transfer, delegate or otherwise dispose of this Agreement or any rights or obligations under this Agreement.  Subject to the foregoing, this Agreement will be binding upon and will inure to the benefit of the parties and their respective successors and permitted assigns.
+
+SECTION 13.  (REMEDIES)
+
+The rights and remedies of either party as set forth in this Agreement are not exclusive and are in addition to any other rights and remedies now or hereafter provided by applicable law or at equity.
+
+SECTION 14.  (EQUITABLE RELIEF)
+
+LICENSEE recognizes that LICENSEE’s breach or threatened breach of its obligations under this Agreement shall cause Renesas irreparable harm and significant injury, the amount of which shall be extremely difficult to estimate and ascertain, thus, making any remedy at law or in damages inadequate.  Therefore, LICENSEE agrees that Renesas shall have the right to apply to any court of competent jurisdiction for an order restraining any breach or threatened breach of this Agreement and for any other relief Renesas deems appropriate, without the necessity of posting of any bond or security.  This right shall be in addition to any other remedy available to Renesas in law or equity.
+
+SECTION 15.  (WAIVER)
+
+None of the conditions of this Agreement will be considered waived unless such waiver is in writing and signed by the waiving party.  No such waiver will be a waiver of any past or future default, breach or modification of any of the conditions of this Agreement unless expressly stipulated in such waiver.
+
+SECTION 16.  (PARTIAL INVALIDITY)
+
+Should any provision of this Agreement be held to be void, invalid or inoperative, the remaining provisions of this Agreement will not be affected and will continue in effect and the invalid provision will be deemed modified to the least degree necessary to remedy such invalidity.
+
+SECTION 17.  (NOTICE)
+
+Any written notices to be given hereunder by either party will be deemed effective upon personal delivery or upon mailing the notice to the party.
+
+SECTION 18.  (RELATIONSHIP OF PARTIES)
+
+Nothing contained in this Agreement will be deemed or construed as creating a joint venture, partnership, agency, employment or fiduciary relationship between the parties.  Neither party nor its agents have any authority of any kind to bind the other party in any respect whatsoever, and the relationship of the parties is, and at all times will continue to be, that of independent contractors.
+
+SECTION 19.  (GOVERNING LAW AND JURISDICTION)
+
+This Agreement will be governed by and construed in accordance with the laws of Japan without giving effect to any choice of law rule that would cause the application of the laws of any other country. Any and all disputes, controversies or claims arising out of or relating to this Agreement that cannot be settled amicably shall be finally settled under the Commercial Arbitration Rules of the Japan Commercial Arbitration Association in accordance with those rules. The arbitration shall take place in Tokyo, Japan and proceedings will be in the English language.  The arbitration award shall be final and binding upon the parties. Any proceedings or awards resulting from arbitration hereunder shall be confidential information; provided, however, that a party shall not be precluded from obtaining enforcement of an award by a court of competent jurisdiction. Notwithstanding anything to the contrary above and irrespective of the tribunal’s powers to order interim or conservatory measures, either party may bring court proceedings in any court having jurisdiction to seek an injunction, specific performance, or other equitable relief to enforce any right or obligation under this Agreement. The parties agree that no bond need be posted to obtain injunctive or equitable relief, but if required by law or the court, the parties consent to a bond in the lowest amount permitted by law.
+
+SECTION 20.  (EXCLUSION OF TERMS)
+
+The parties hereby acknowledge and agree that any provisions of any law adopting exactly or in modified form the Uniform Computer Information Transactions Act (“UCITA”) will not be applicable to this Agreement.  Furthermore, both parties waive any and all rights arising from any such law.  The provisions of the United Nations Convention on the International Sale of Goods will not apply.
+
+SECTION 21.  (INTERPRETATION)
+
+The headings in this Agreement are solely for convenience of reference and will not affect its interpretation.  Unless the context otherwise requires, the singular includes the plural, and the plural includes the singular.  Unless otherwise specifically stated, references to Sections refer to sections in the main body of this Agreement and the words “herein,” “hereof,” and “hereunder” and other words of similar import refer to this Agreement as a whole and not to any particular section or paragraph.  The words “include,” “includes,” “including” and derivative forms of them will be deemed followed by the phrase “without limitation” regardless of whether such phrase appears there (and with no implication being drawn from its inconsistent inclusion or non-inclusion).  Any ambiguities in this Agreement will not be strictly construed against the drafter of the language concerned but will be resolved by applying the most reasonable interpretation under the circumstances, giving full consideration to the intentions of the parties at the time of contracting.  This Agreement will not be construed against any party by reason of its preparation.
+
+SECTION 22.  (DISCUSSION)
+
+LICENSEE or Renesas shall discuss and resolve in good faith any doubts that arise of regarding matters not stipulated in this Agreement or the interpretation of the provisions of this Agreement. 
+
+SECTION 23.  (ENTIRE AGREEMENT AND AMENDMENT)
+
+23.1	This Agreement constitutes the sole and entire agreement between the parties hereto relating to the subject matter hereof and supersedes all previous agreements, negotiations, commitments and/or representations made between the parties hereto either orally or in writing.
+23.2	change, modification or amendment of the terms of this Agreement or any waiver of any rights and obligations of the parties hereto shall not be effective unless agreed in writing and signed by both parties hereto.
+
+LLWEB-20119030
+L399-Rev.1.0

@@ -1,0 +1,179 @@
+#!/usr/bin/bash
+
+set -e
+
+die() { echo >&2 "!! $*"; exit 1; }
+
+echo $@ >> /tmp/args
+
+export DESKTOP_WAYLAND=true
+
+SENTINEL_FILE="steamos-session-select"
+
+
+session="${1:-gamescope}"
+if ${DESKTOP_WAYLAND}; then
+  session_type="wayland"
+else
+  session_type="x11"
+fi
+
+session_launcher=""
+create_sentinel=""
+
+if [[ "$2" == "--sentinel-created" ]]; then
+  SENTINEL_CREATED=1
+  if ${DESKTOP_WAYLAND}; then
+      session_type="wayland"
+  else
+      session_type="x11"
+  fi
+fi
+
+# Update config sentinel
+if [[ -z $SENTINEL_CREATED ]]; then
+  [[ $EUID == 0 ]] && die "Running $0 as root is not allowed"
+
+  [[ -n ${HOME+x} ]] || die "No \$HOME variable"
+  config_dir="${XDG_CONF_DIR:-"$HOME/.config"}"
+  session_type=$(
+    cd "$HOME"
+    mkdir -p "$config_dir"
+    cd "$config_dir"
+    if [[ -f "steamos-session-type" ]]; then
+      cp steamos-session-type "$SENTINEL_FILE"
+    else
+      if ${DESKTOP_WAYLAND}; then
+        echo "wayland" > "$SENTINEL_FILE"
+      else
+        echo "x11" > "$SENTINEL_FILE"
+      fi
+    fi
+    cat "$SENTINEL_FILE"
+  )
+
+  # clear steam game desktop shortcut clutter
+  DATA_HOME=${XDG_DATA_HOME:-$HOME/.local/share}
+  grep -r --files-with-matches "Exec=steam steam://rungameid/" "${DATA_HOME}"/applications/ | tr '\n' '\0' | xargs -0 -I {} rm {} || true
+
+  # If we were executed as a session user and then re-execute as root below, we don't want to set root's sentinel too
+  export SENTINEL_CREATED=1
+fi
+
+# We use "plasma" as "desktop" to hook up to SteamOS's scripts
+case "$session" in
+  plasma-wayland-persistent)
+    if [[ ! -z $(systemctl status gdm | grep running) ]]; then
+      session_launcher="gnome-wayland"
+    elif [[ ! -z $(systemctl status sddm | grep running) ]]; then
+      session_launcher="plasma"
+    fi
+  ;;
+  plasma-x11-persistent)
+    if [[ ! -z $(systemctl status gdm | grep running) ]]; then
+      session_launcher="gnome-xorg"
+    elif [[ ! -z $(systemctl status sddm | grep running) ]]; then
+      session_launcher="plasmax11"
+    fi
+  ;;
+  desktop|plasma)
+    if ${DESKTOP_WAYLAND}; then
+      if [[ ! -z $(systemctl status gdm | grep running) ]]; then
+        session_launcher="gnome-wayland"
+      elif [[ ! -z $(systemctl status sddm | grep running) ]]; then
+        session_launcher="plasma"
+      fi
+    else
+      if [[ ! -z $(systemctl status gdm | grep running) ]]; then
+        session_launcher="gnome-xorg"
+      elif [[ ! -z $(systemctl status sddm | grep running) ]]; then
+        session_launcher="plasmax11"
+      fi
+    fi
+    create_sentinel=1
+  ;;
+  gamescope)
+    session_launcher="gamescope-session-steam"
+    create_sentinel=1
+  ;;
+  *)
+    echo >&2 "!! Unrecognized session '$session'"
+    exit 1
+  ;;
+esac
+
+echo "Updated user selected session to $session_launcher"
+
+if [[ ! -z $4 ]]; then
+  GDMUSER="$4"
+fi
+
+# Become root
+if [[ $EUID != 0 ]]; then
+  exec pkexec "$(realpath $0)" "$session" --sentinel-created "$session_type" "$USER"
+  exit 1
+fi
+
+# GNOME/GDM
+if [[ ! -z $(systemctl status gdm | grep running) ]]; then
+  # set new default session
+  if ${DESKTOP_WAYLAND}; then
+    if [[ -f /var/lib/AccountsService/users/"$GDMUSER" ]]; then
+      sed -i "s|Session=.*|Session=$session_launcher|g" /var/lib/AccountsService/users/"$GDMUSER"
+    else
+      echo "[User]" > /var/lib/AccountsService/users/"$GDMUSER"
+      echo "Session=$session_launcher" >> /var/lib/AccountsService/users/"$GDMUSER"
+    fi
+  else
+    if [[ -f /var/lib/AccountsService/users/"$GDMUSER" ]]; then
+      sed -i "s|XSession=.*|XSession=$session_launcher|g" /var/lib/AccountsService/users/"$GDMUSER"
+    else
+      echo "[User]" > /var/lib/AccountsService/users/"$GDMUSER"
+      echo "XSession=$session_launcher" >> /var/lib/AccountsService/users/"$GDMUSER"
+    fi
+  fi
+  # enable auto-login
+  # We need timedlogin here
+  # autologin without timer fails after manual logout
+  if [[ -f /etc/gdm/custom.conf ]]; then
+    sed -i "s|TimedLoginEnable=.*|TimedLoginEnable=true|g" /etc/gdm/custom.conf
+    sed -i "s|TimedLoginDelay=.*|TimedLoginDelay=1|g" /etc/gdm/custom.conf
+    sed -i "s|TimedLogin=.*|TimedLogin=$GDMUSER|g" /etc/gdm/custom.conf
+    if [[ -z $(cat /etc/gdm/custom.conf | grep TimedLogin) ]]; then
+      sed -i "/\[daemon\]/a\TimedLoginEnable=true" /etc/gdm/custom.conf
+      sed -i "/TimedLoginEnable=true/a\TimedLoginDelay=1" /etc/gdm/custom.conf
+      sed -i "/TimedLoginDelay=1/a\TimedLogin=$GDMUSER" /etc/gdm/custom.conf
+    fi
+  fi
+fi
+
+
+# KDE/SDDM
+if [[ ! -z $(systemctl status sddm | grep running) ]]; then
+  if [[ -f /etc/sddm.conf ]]; then
+    # set new default session
+    sed -i "s|Session=.*|Session=$session_launcher.desktop|g" /etc/sddm.conf
+    # Relogin is REQUIRED for SDDM to not just boot us to the login screen without relogging
+    # GDM has similar problem needing timedlogin instead of autologin
+    sed -i "s|Relogin=.*|Relogin=true|g" /etc/sddm.conf
+    if [[ -z $(cat /etc/sddm.conf | grep Relogin) ]]; then
+      sed -i '/\[Autologin\]/a\Relogin=true' /etc/sddm.conf
+    fi
+  fi
+  # check second location just in case
+  if [[ -f /etc/sddm.conf.d/kde_settings.conf ]]; then
+    # set new default session
+    sed -i "s|Session=.*|Session=$session_launcher.desktop|g" /etc/sddm.conf.d/kde_settings.conf
+    # Relogin is REQUIRED for SDDM to not just boot us to the login screen without relogging
+    # GDM has similar problem needing timedlogin instead of autologin
+    sed -i "s|Relogin=.*|Relogin=true|g" /etc/sddm.conf.d/kde_settings.conf
+    if [[ -z $(cat /etc/sddm.conf.d/kde_settings.conf | grep Relogin) ]]; then
+      sed -i '/\[Autologin\]/a\Relogin=true' /etc/sddm.conf.d/kde_settings.conf
+    fi
+  fi
+fi
+
+# LightDM (For Chimera)
+if [[ ! -z $(systemctl status lightdm | grep running) ]]; then
+  sed -i "s|autologin-session=.*|autologin-session=$session_launcher.desktop|g" /etc/lightdm/lightdm.conf.d/10-chimeraos-session.conf
+fi

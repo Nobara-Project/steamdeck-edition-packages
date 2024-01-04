@@ -1,0 +1,85 @@
+#!/bin/bash
+
+set -euo pipefail
+
+## Check if we have performed initial firmware updates on a galileo unit. Once we have triggered them once, we create a
+## sentinel file to let the underlying updaters (controller/BIOS) resume handling it normally.
+##
+## This is due to the initial firmware update being necessary for normal device usage, but the combined effect of the
+## BIOS updates presently turning the screen off for many seconds and the controller update taking an additional minute
+## is a worrying amount of downtime on the first boot.  Instead, we will inhibit applying these and steam will use this
+## script to query if it should display a "Day one firmware update" screen, and then trigger it.
+
+# Controller:
+#  - The controller updater won't operate until this has run once, creating the sentinel
+#    (unless controllers are borked/in-bootloader)
+#  - Once the sentinel is created it will resume auto-updates on boot
+# BIOS:
+#  - The BIOS with the slower update process require prompting from steam regardless -- triggering initial updates
+#    just executes a BIOS install straight away.
+
+SENTINEL_FILE=/etc/jupiter-ran-initial-firmware-update
+
+info() { echo >&2 "$*"; }
+err()  { info "!! $*"; }
+
+## Escalate to root
+if [[ $EUID -ne 0 ]]; then
+    exec pkexec --disable-internal-agent "$0" "$@"
+fi
+
+bios_too_old() {
+  local bios_version
+  bios_version=$(cat /sys/class/dmi/id/bios_version || true)
+  if [[ $bios_version =~ ^F7G0*([0-9]+)$ ]]; then
+    (( BASH_REMATCH[1] < 105 ))
+  else
+    false
+  fi
+}
+
+checkmode=
+[[ ${1-} = "check" ]] && checkmode=1
+
+## Galileo?
+board_name=$(cat /sys/class/dmi/id/board_name || true)
+
+if [[ $board_name != "Galileo" ]]; then
+  # Only applies to galileo
+  info "Initial firmware update only necessary for galileo hardware"
+  exit 0
+fi
+
+if ! bios_too_old; then
+  info "BIOS newer than 105 -- no initial firmware update necessary"
+  exit 0
+fi
+
+## Already set?
+if [[ -e $SENTINEL_FILE ]]; then
+  info "$SENTINEL_FILE exists -- initial update already triggered, no action"
+  # If the initial BIOS update fails we don't want to start looping on trying to apply it each boot
+  exit 0
+fi
+
+## Need to do it, is this check mode?
+info "Initial firmware update should be triggered for this hardware"
+
+if [[ -n $checkmode ]]; then
+  info "  check passed, not executing"
+  exit 7
+fi
+
+# Non-check mode -- touch the sentinel file
+touch -- "$SENTINEL_FILE"
+
+# Trigger a bios update if available
+if [[ "$(cat /sys/class/power_supply/BAT1/capacity)" -lt 15 ]]; then
+  info "!! Too low battery to force a BIOS update right now. Initial update check is marked as passed regardless."
+elif ! /usr/bin/jupiter-biosupdate; then
+  info "!! Failed to trigger BIOS update. Initial update check is marked as passed regardless"
+fi
+
+# If bios update didn't trigger a reboot, or if there was none, just trigger a reboot to allow controller updates to
+# happen now that the trigger is written
+reboot

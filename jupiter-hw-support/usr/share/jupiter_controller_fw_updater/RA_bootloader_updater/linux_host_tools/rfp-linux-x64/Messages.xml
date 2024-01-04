@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<LocalizedMessages xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<AboutMenus>
+		<Menu>
+			<Neutral>
+				<Name>&amp;Renesas Flash Programmer Web Page</Name>
+				<URL>https://www.renesas.com/rfp</URL>
+			</Neutral>
+			<ja-JP>
+				<Name>Renesas Flash Programmer WEBサイト(&amp;R)</Name>
+				<URL>https://www.renesas.com/rfp</URL>
+			</ja-JP>
+		</Menu>
+		<Menu>
+			<Neutral>
+				<Name>&amp;Give Feedback...</Name>
+				<URL>https://www.renesas.com/programmer-feedback?lang=en-US</URL>
+			</Neutral>
+			<ja-JP>
+				<Name>フィードバックの送信(&amp;G)...</Name>
+				<URL>https://www.renesas.com/programmer-feedback?lang=ja-JP</URL>
+			</ja-JP>
+		</Menu>
+		<Separator/>
+	</AboutMenus>
+	<Message>
+		<ErrorCode>E3000105</ErrorCode>
+		<Neutral>The target device is not connected or has not returned a response. Confirm that the connection to the target device and the operating mode are correct. The security functions of the target device may have prevented the connection.
+Refer to https://www.renesas.com/rfp-error-guide#no-response, Problems during Operation.</Neutral>
+		<ja-JP>ターゲットデバイスが接続されていないか、応答が確認できません。
+ターゲットデバイスとの接続や動作モードが正しいか確認してください。
+ターゲットデバイスのセキュリティ機能により、接続が禁止されている可能性もあります。
+「https://www.renesas.com/rfp-error-guide#no-response」を参照してください。</ja-JP>
+	</Message>
+	<Message>
+		<ErrorCode>E3000107</ErrorCode>
+		<Neutral>An attempt was made to connect the target device which differs from that when the project was created or the memory structure might have been changed by the option settings of the target device. Create a new project.
+Refer to https://www.renesas.com/rfp-error-guide#not-match, Problems during Operation.</Neutral>
+		<ja-JP>プロジェクト作成時と異なるターゲットデバイスに接続しようとしているか、ターゲットデバイスのオプション設定によりメモリ構成が変わった可能性があります。
+接続するにはプロジェクトを新規作成し直してください。
+「https://www.renesas.com/rfp-error-guide#not-match」を参照してください。</ja-JP>
+	</Message>
+	<Message>
+		<ErrorCode>E4000003</ErrorCode>
+		<Neutral>A timeout occurred when a problem in communications between the target device and the Flash programmer arose for some reason. Check the connection to the target device and confirm that the target device has not been reset.
+Refer to https://www.renesas.com/rfp-error-guide#timeout, Problems during Operation.</Neutral>
+		<ja-JP>何らかの原因でターゲットデバイスとプログラマ間の通信に問題が発生し，タイムアウトが発生しました。ターゲットデバイスとの接続や、ターゲットデバイスにリセットが入っていないかを確認してください。
+「https://www.renesas.com/rfp-error-guide#timeout」を参照してください。</ja-JP>
+	</Message>
+	<Message>
+		<ErrorCode>E3000203,E3000204,E3000205,E3000206</ErrorCode>
+		<Neutral>Refer to https://www.renesas.com/rfp-error-guide#connecting, Problems during Communications.</Neutral>
+		<ja-JP>「https://www.renesas.com/rfp-error-guide#connecting」を参照してください。</ja-JP>
+	</Message>
+	<Message>
+		<ErrorCode>E300010C,E4000004,E4000005,E4000006,E1000004</ErrorCode>
+		<Neutral>Refer to https://www.renesas.com/rfp-error-guide#communication, Problems during Communications.</Neutral>
+		<ja-JP>「https://www.renesas.com/rfp-error-guide#communication」を参照してください。</ja-JP>
+	</Message>
+</LocalizedMessages>

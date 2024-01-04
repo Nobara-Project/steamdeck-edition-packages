@@ -1,0 +1,10 @@
+#!/bin/bash
+
+/usr/bin/steamrestart
+/usr/libexec/os-session-select gamescope
+if [[ ! -z $(systemctl status gdm | grep running) ]]; then
+        exec gnome-session-quit --no-prompt
+fi
+if [[ ! -z $(systemctl status sddm | grep running) ]]; then
+        exec qdbus org.kde.ksmserver /KSMServer logout 0 0 0
+fi

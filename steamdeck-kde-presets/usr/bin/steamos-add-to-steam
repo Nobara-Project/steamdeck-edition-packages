@@ -1,0 +1,35 @@
+#! /bin/sh
+
+add_to_steam() {
+    encodedUrl="steam://addnonsteamgame/$(python3 -c "import urllib.parse;print(urllib.parse.quote(\"$1\", safe=''))")"
+    touch /tmp/addnonsteamgamefile
+    xdg-open $encodedUrl
+}
+
+create_desktop_file()
+{
+    name=$(basename "$1")
+    file="/tmp/$name.desktop"
+    cat << EOF > "$file"
+[Desktop Entry]
+Type=Application
+Name=$name
+Exec="$1"
+EOF
+}
+
+file=$1
+if [ ! -e "$file" ]
+then
+    exit 1
+fi
+mime=$(xdg-mime query filetype "$file")
+case "$mime" in
+    "application/x-desktop")
+        add_to_steam "$file"
+        ;;
+    "application/x-executable"|"application/vnd.appimage"|"application/x-shellscript"|"application/x-ms-dos-executable")
+        create_desktop_file "$file"
+        add_to_steam "$file"
+        ;;
+esac

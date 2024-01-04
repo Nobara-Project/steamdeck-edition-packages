@@ -1,0 +1,14 @@
+#!/bin/bash
+
+set -eu
+
+if [[ $EUID -ne 0 ]];
+then
+    exec pkexec --disable-internal-agent "$0" "$@"
+fi
+
+case "$1" in
+    --enable) systemctl enable --now avahi-daemon && systemctl enable --now steamos-devkit-service ;;
+    --disable) systemctl disable --now steamos-devkit-service && systemctl disable --now avahi-daemon ;;
+    *) echo "Unknown option $1"; exit 22;;
+esac

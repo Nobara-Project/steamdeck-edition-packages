@@ -1,0 +1,18 @@
+[Desktop Entry]
+Comment=Vapor - SteamOS Theme based on KDE Breeze and Breath
+Name=Vapor
+X-KDE-PluginInfo-Author=Valve
+X-KDE-PluginInfo-Category=Plasma Theme
+X-KDE-PluginInfo-Email=
+X-KDE-PluginInfo-EnabledByDefault=true
+X-KDE-PluginInfo-License=GPL version 3
+X-KDE-PluginInfo-Name=Vapor
+X-KDE-PluginInfo-Version=0.0.17
+X-KDE-PluginInfo-Website=
+X-Plasma-API=5.0
+
+[Wallpaper]
+defaultFileSuffix=.png
+defaultHeight=1080
+defaultWallpaperTheme=Vapor
+defaultWidth=1920

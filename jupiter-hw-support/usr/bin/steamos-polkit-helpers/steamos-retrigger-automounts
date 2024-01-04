@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# Helper to send reload to all active steamos-automount services, via pkexec if necessary/allowed
+
+set -eu
+
+if [[ $EUID -ne 0 ]];
+then
+    exec pkexec --disable-internal-agent "$(realpath $0)" "$@"
+fi
+
+set -x
+systemctl reload --no-block --state=active steamos-automount@\*

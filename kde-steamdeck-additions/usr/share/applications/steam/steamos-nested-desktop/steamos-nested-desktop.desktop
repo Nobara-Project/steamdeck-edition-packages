@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
 Name=Nested Desktop
-Exec=steamos-nested-desktop
+Exec=env LD_PRELOAD="" steamos-nested-desktop
 Categories=Desktop;
 
 # Regular icon/logo. Any size, 1:1.

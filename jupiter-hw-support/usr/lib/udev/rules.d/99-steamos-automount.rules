@@ -4,5 +4,9 @@
 # The service expects to be asynchronous and shouldn't block udev rules
 KERNEL=="mmcblk0p[0-9]", ACTION=="add",    RUN+="/bin/systemctl start --no-block steamos-automount@%k.service"
 KERNEL=="mmcblk0p[0-9]", ACTION=="remove", RUN+="/bin/systemctl stop  --no-block steamos-automount@%k.service"
-KERNEL=="sd[a-z][0-9]",  ACTION=="add",    RUN+="/bin/systemctl start --no-block steamos-automount@%k.service"
-KERNEL=="sd[a-z][0-9]",  ACTION=="remove", RUN+="/bin/systemctl stop  --no-block steamos-automount@%k.service"
+
+# We need to filter only partitions from external usb devices here, otherwise
+# internal partitions from other drives will be mounted, which can lead to things
+# like windows ntfs recovery paritions or EFI boot partitions getting mounted
+KERNEL=="sd[a-z][0-9]",  ENV{DEVTYPE}=="partition", ENV{ID_BUS}=="usb", ACTION=="add",    RUN+="/bin/systemctl start --no-block steamos-automount@%k.service"
+KERNEL=="sd[a-z][0-9]",  ENV{DEVTYPE}=="partition", ENV{ID_BUS}=="usb", ACTION=="remove", RUN+="/bin/systemctl stop  --no-block steamos-automount@%k.service"

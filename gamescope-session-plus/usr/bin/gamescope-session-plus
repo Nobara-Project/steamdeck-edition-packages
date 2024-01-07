@@ -20,6 +20,9 @@ systemctl --user set-environment XDG_DESKTOP_PORTAL_DIR=""
 # Remove these as they prevent gamescope-session-plus from starting correctly
 systemctl --user unset-environment DISPLAY XAUTHORITY
 
+# Mount any remaining large partitions that are not handled by Valve's sdcard-automount:
+/usr/libexec/nobara-automount
+
 # If this shell script is killed then stop gamescope-session-plus
 trap "systemctl --user stop gamescope-session-plus@${CLIENT}.service" HUP INT TERM
 

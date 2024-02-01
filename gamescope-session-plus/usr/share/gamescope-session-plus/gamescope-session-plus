@@ -256,6 +256,10 @@ if [[ ":Galileo:Jupiter:" =~ "$(cat /sys/devices/virtual/dmi/id/product_name)" ]
     # Prevent default power button behavior
     systemd-inhibit --what=handle-suspend-key:handle-power-key:handle-hibernate-key --who=gamescope-session --why="gamescope-session handles power button events" sleep infinity &
     inhibitor_pid="$!"
+
+    (while true; do
+        python /usr/lib/hwsupport/power-button-handler.py
+    done) &
 fi
 
 # If we have mangoapp binary start it

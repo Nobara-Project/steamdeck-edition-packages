@@ -20,6 +20,11 @@ systemctl --user set-environment XDG_DESKTOP_PORTAL_DIR=""
 # Remove these as they prevent gamescope-session-plus from starting correctly
 systemctl --user unset-environment DISPLAY XAUTHORITY
 
+# Run hhd if it exists
+if [[ -f /usr/libexec/enable-hhd ]]; then
+  /usr/libexec/enable-hhd
+fi
+
 # Mount any remaining large partitions that are not handled by Valve's sdcard-automount:
 /usr/libexec/nobara-automount
 

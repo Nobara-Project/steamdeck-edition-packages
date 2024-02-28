@@ -1,10 +1,23 @@
-#!/bin/bash
-
+#!/usr/bin/bash
+# Check if running in a nested desktop
+if [[ "$PATH" =~ nested_plasma ]]; then
+    # If running in a nested desktop, close the session and exit
+    qdbus org.kde.ksmserver /KSMServer logout 0 0 1
+    exit
+fi
+# If not running in a nested desktop, continue with other operations
 /usr/bin/steamrestart
 /usr/libexec/os-session-select gamescope
-if [[ ! -z $(systemctl status gdm | grep running) ]]; then
-        exec gnome-session-quit --no-prompt
+
+# Check if GDM is running
+if systemctl is-active --quiet gdm; then
+    # If GDM is running, quit the GNOME session without prompting
+    gnome-session-quit --no-prompt
 fi
-if [[ ! -z $(systemctl status sddm | grep running) ]]; then
-        exec qdbus org.kde.ksmserver /KSMServer logout 0 0 0
+
+# Check if SDDM is running
+if systemctl is-active --quiet sddm; then
+    # If SDDM is running, initiate logout
+    qdbus org.kde.ksmserver /KSMServer logout 0 0 1
+
 fi

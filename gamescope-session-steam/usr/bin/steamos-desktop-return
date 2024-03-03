@@ -1,5 +1,12 @@
 #!/bin/bash
+# Check if running in a nested desktop
+if [[ "$PATH" =~ nested_plasma ]]; then
+    # If running in a nested desktop, close the session immediately and exit
+    qdbus org.kde.ksmserver /KSMServer logout 0 0 1
+    exit
+fi
 
+# If not running in a nested desktop, continue with normal script execution
 /usr/bin/steamrestart
 /usr/libexec/os-session-select gamescope
 if [[ ! -z $(systemctl status gdm | grep running) ]]; then

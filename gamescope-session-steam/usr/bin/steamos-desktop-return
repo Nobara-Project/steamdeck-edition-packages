@@ -2,7 +2,7 @@
 # Check if running in a nested desktop
 if [[ "$PATH" =~ nested_plasma ]]; then
     # If running in a nested desktop, close the session immediately and exit
-    qdbus org.kde.ksmserver /KSMServer logout 0 0 1
+    qdbus qdbus org.kde.Shutdown /Shutdown org.kde.Shutdown.logout
     exit
 fi
 
@@ -13,5 +13,5 @@ if [[ ! -z $(systemctl status gdm | grep running) ]]; then
         exec gnome-session-quit --no-prompt
 fi
 if [[ ! -z $(systemctl status sddm | grep running) ]]; then
-        exec qdbus org.kde.ksmserver /KSMServer logout 0 0 0
+        exec qdbus org.kde.Shutdown /Shutdown org.kde.Shutdown.logout
 fi

@@ -5,8 +5,8 @@ function short_session_recover {
     # remove some caches and stateful things known to cause Steam to fail to start if corrupt
     rm -rf --one-file-system ~/.local/share/Steam/config/widevine
     # extract the steam bootstrap to potentially fix the issue the next boot
-    if [[ -f "/usr/share/gamescope-session-plus/steam-bootstrap.tar.gz" ]]; then
-        tar xf /usr/share/gamescope-session-plus/steam-bootstrap.tar.gz -C ~/.local/share/
+    if [[ -f "/usr/share/gamescope-session-plus/bootstraplinux_ubuntu12_32.tar.xz" ]]; then
+        tar xf /usr/share/gamescope-session-plus/bootstraplinux_ubuntu12_32.tar.xz -C ~/.local/share/Steam
     fi
     # change session to desktop as fallback
     steamos-session-select desktop
@@ -102,9 +102,9 @@ export CLIENTCMD="steam -gamepadui -steamos3 -steampal -steamdeck"
 # Workaround for Steam login issue while Steam client change propagates out of Beta
 touch "${HOME}"/.steam/root/config/SteamAppData.vdf || true
 
-if [[ -f "/usr/share/gamescope-session-plus/steam-bootstrap.tar.gz" ]] && ! grep -q "set_bootstrap=1" "$STEAM_BOOTSTRAP_CONFIG"; then
+if [[ -f "/usr/share/gamescope-session-plus/bootstraplinux_ubuntu12_32.tar.xz" ]] && ! grep -q "set_bootstrap=1" "$STEAM_BOOTSTRAP_CONFIG"; then
     mkdir -p ~/.local/share/Steam
-    tar xf /usr/share/gamescope-session-plus/steam-bootstrap.tar.gz -C ~/.local/share/
+    tar xf /usr/share/gamescope-session-plus/bootstraplinux_ubuntu12_32.tar.xz -C ~/.local/share/Steam
     echo "set_bootstrap=1" >> "$STEAM_BOOTSTRAP_CONFIG"
 fi
 

@@ -1,0 +1,10 @@
+#!/bin/bash
+
+file="/etc/gamescope-session-plus/run-commands"
+
+# Use sed to remove lines starting with # and empty lines
+sed -e 's/[[:space:]]*#.*// ; /^[[:space:]]*$/d' "$file" |
+while read -r line; do
+    # Execute each line as a command
+    eval "$line"
+done

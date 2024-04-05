@@ -8,3 +8,17 @@ while read -r line; do
     # Execute each line as a command
     eval "$line"
 done
+
+# Directory containing the .conf files
+directory="/etc/gamescope-session-plus/run-commands.d/"
+
+# Loop over each .conf file in the directory
+for file in "$directory"*.conf; do
+    # Check if the file exists
+    if [ -f "$file" ]; then
+        # Source the file to execute its contents
+        source "$file"
+    else
+        echo "File $file does not exist."
+    fi
+done

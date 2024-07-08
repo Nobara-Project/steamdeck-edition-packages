@@ -1,7 +1,7 @@
 #! /bin/bash
 
 function short_session_recover {
-    mkdir -p ~/.local/share/
+    mkdir -p ~/.local/share/Steam
     # remove some caches and stateful things known to cause Steam to fail to start if corrupt
     rm -rf --one-file-system ~/.local/share/Steam/config/widevine
     # extract the steam bootstrap to potentially fix the issue the next boot
@@ -11,6 +11,19 @@ function short_session_recover {
     # change session to desktop as fallback
     steamos-session-select desktop
 }
+
+function post_gamescope_start {
+	# Run steam-tweaks if exists
+	if command -v steam-tweaks > /dev/null; then
+		steam-tweaks > "${HOME}"/.steam-tweaks.log
+	fi
+}
+
+# Show VRR controls in Steam
+export STEAM_GAMESCOPE_VRR_SUPPORTED=1
+
+# When set to 1, a toggle will show up in the steamui to control whether dynamic refresh rate is applied to the steamui
+export STEAM_GAMESCOPE_DYNAMIC_REFRESH_IN_STEAM_SUPPORTED=0
 
 # Enable Mangoapp
 export STEAM_MANGOAPP_PRESETS_SUPPORTED=1
@@ -31,11 +44,7 @@ export STEAM_GAMESCOPE_HAS_TEARING_SUPPORT=1
 # Enable tearing controls in steam
 export STEAM_GAMESCOPE_TEARING_SUPPORTED=1
 
-# Enable VRR controls in steam
-export STEAM_GAMESCOPE_VRR_SUPPORTED=1
-
-# When set to 1, a toggle will show up in the steamui to control whether dynamic refresh rate is applied to the steamui
-export STEAM_GAMESCOPE_DYNAMIC_REFRESH_IN_STEAM_SUPPORTED=0
+export STEAM_GAMESCOPE_HDR_SUPPORTED=1
 
 # Workaround for steam getting killed immediatly during reboot
 export STEAMOS_STEAM_REBOOT_SENTINEL="/tmp/steamos-reboot-sentinel"
@@ -82,7 +91,9 @@ export STEAM_GAMESCOPE_FANCY_SCALING_SUPPORT=1
 # Color management support
 export STEAM_GAMESCOPE_COLOR_MANAGED=1
 export STEAM_GAMESCOPE_VIRTUAL_WHITE=1
-export STEAM_GAMESCOPE_HDR_SUPPORTED=1
+
+# HDMI-CEC support
+export STEAM_ENABLE_CEC=0
 
 # Set input method modules for Qt/GTK that will show the Steam keyboard
 export QT_IM_MODULE=steam
@@ -93,7 +104,8 @@ if [ -f "/usr/share/steamos/steamos.png" ] ; then
   export STEAM_UPDATEUI_PNG_BACKGROUND=/usr/share/steamos/steamos.png
 fi
 
-# SteamOS cursor theme
+export CURSOR_FILE="${HOME}/.local/share/Steam/tenfoot/resource/images/cursors/arrow.png"
+
 export XCURSOR_THEME=steam
 export XCURSOR_SCALE=256
 
@@ -124,9 +136,4 @@ fi
 # Run steam-tweaks if exists
 if command -v steam-tweaks > /dev/null; then
     steam-tweaks > "${HOME}"/.steam-tweaks.log
-fi
-
-# Start discover-overlay if discord is installed
-if command -v bazzite-discover-overlay > /dev/null; then
-    env DISPLAY=:0 bazzite-discover-overlay 2>&1 &
 fi

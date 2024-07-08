@@ -5,39 +5,43 @@ declare -r CLIENT_CONFIG_DIR_USR=/usr/share/gamescope-session-plus/sessions.d
 declare -r CLIENT_CONFIG_DIR_ETC=/etc/gamescope-session-plus/sessions.d
 declare -r CLIENT_CONFIG_DIR_LOCAL="${XDG_CONFIG_HOME:-$HOME/.config}/gamescope-session-plus/sessions.d"
 
-# Reset power-profiles-daemon/TuneD
+# Reset power-profiles-daemon/TuneD to balanced if the current profile is power save, this allows desktop control without greatly harming gaming performance.
 if command -v tuned-adm > /dev/null; then
-    if grep -qz "throughput-performance" <<< "$(tuned-adm list)"; then
-        tuned-adm profile throughput-performance
-    elif grep -qz "balanced" <<< "$(tuned-adm list)"; then
-        tuned-adm profile balanced
-    fi
+	if grep -qz "powersave" <<< "$(tuned-adm active)"; then
+		tuned-adm profile balanced
+	fi
 elif command -v powerprofilesctl > /dev/null; then
-    if grep -qz "performance" <<< "$(powerprofilesctl list)"; then
-        powerprofilesctl set performance
-    elif grep -qz "balanced" <<< "$(powerprofilesctl list)"; then
-        powerprofilesctl set balanced
-    fi
+	if grep -qz "power-saver" <<< "$(powerprofilesctl get)"; then
+		powerprofilesctl set balanced
+	fi
 fi
 
 # default empty session recovery function
-short_session_recover () {
+short_session_recover() {
 	:
 }
 
 # default empty function to run after gamescope is started
-post_gamescope_start () {
+post_gamescope_start() {
 	:
+}
+
+gamescope_has_option() {
+	if (gamescope --help 2>&1 | grep -e "$1" > /dev/null); then
+		return 0
+	fi
+
+	return 1
 }
 
 # Fix intel color corruption
 # might come with some performance degradation but is better than a corrupted
 # color image
 export INTEL_DEBUG=norbc
-if grep -q "i915" <<< $(lsmod); then
-    # Force GLTHREAD on Intel hardware due to a bug that can cause crashes without it
-    export MESA_GLTHREAD=true
-fi
+export mesa_glthread=true
+
+# Force Qt applications to run under xwayland
+export QT_QPA_PLATFORM=xcb
 
 # Some environment variables by default (taken from Deck session)
 export SDL_VIDEO_MINIMIZE_ON_FOCUS_LOSS=0
@@ -72,12 +76,12 @@ export GAMESCOPE_NV12_COLORSPACE=k_EStreamColorspace_BT601
 # so we don't get mangoapp showing up before Steam initializes
 # on OOBE and stuff.
 mkdir -p "$(dirname "$MANGOHUD_CONFIGFILE")"
-echo "no_display" > "$MANGOHUD_CONFIGFILE"
+echo "no_display" >"$MANGOHUD_CONFIGFILE"
 
 # Prepare our initial VRS config file
 # for dynamic VRS in Mesa.
 mkdir -p "$(dirname "$RADV_FORCE_VRS_CONFIG_FILE")"
-echo "1x1" > "$RADV_FORCE_VRS_CONFIG_FILE"
+echo "1x1" >"$RADV_FORCE_VRS_CONFIG_FILE"
 
 # To expose vram info from radv
 export WINEDLLOVERRIDES=dxgi=n
@@ -85,36 +89,38 @@ export WINEDLLOVERRIDES=dxgi=n
 # Don't wait for buffers to idle on the client side before sending them to gamescope
 export vk_xwayland_wait_ready=false
 
-# Make Qt apps use the styling and behaviour of the desktop session
-# This fixes some missing icons and unreadable text with Qt desktop apps in gamescope
-export QT_QPA_PLATFORM_THEME=kde
-
 # To play nice with the short term callback-based limiter for now
 export GAMESCOPE_LIMITER_FILE=$(mktemp /tmp/gamescope-limiter.XXXXXXXX)
 
 # Temporary crutch until dummy plane interactions / etc are figured out
 export GAMESCOPE_DISABLE_ASYNC_FLIPS=1
 
+# Make Qt apps use the styling and behaviour of the desktop session
+# This fixes some missing icons and unreadable text with Qt desktop apps in gamescope
+if [[ ${BASE_IMAGE_NAME} == 'silverblue' ]]; then
+  export QT_QPA_PLATFORM_THEME=gtk2
+else
+  export QT_QPA_PLATFORM_THEME=kde
+fi
+
 ulimit -n 524288
 
 # Source device quirks if exists
 if [ -f /usr/share/gamescope-session-plus/device-quirks ]; then
-  . /usr/share/gamescope-session-plus/device-quirks
+	. /usr/share/gamescope-session-plus/device-quirks
 fi
 
 # Source client app specific configuration files
 set -a
-for i in ${CLIENT_CONFIG_DIR_USR}/${CLIENT} ${CLIENT_CONFIG_DIR_ETC}/${CLIENT} ${CLIENT_CONFIG_DIR_LOCAL}/${CLIENT} ;
-do
-    [[ -f "${i}" ]] && . "${i}"
+for i in ${CLIENT_CONFIG_DIR_USR}/${CLIENT} ${CLIENT_CONFIG_DIR_ETC}/${CLIENT} ${CLIENT_CONFIG_DIR_LOCAL}/${CLIENT}; do
+	[[ -f "${i}" ]] && . "${i}"
 done
 set +a
 
 # Source user configuration from ~/.config/environment.d
 set -a
-for i in "${HOME}"/.config/environment.d/*.conf ;
-do
-    [[ -f "${i}" ]] && . "${i}"
+for i in "${HOME}"/.config/environment.d/*.conf; do
+	[[ -f "${i}" ]] && . "${i}"
 done
 set +a
 
@@ -146,56 +152,115 @@ else
 	echo >&2 "!! Failed to claim global gamescope stats session"
 fi
 
-CURSOR=""
-# Use specified cursor if file exists
-if [ -f "$CURSOR_FILE" ] ; then
-    CURSOR="--cursor ${CURSOR_FILE}"
+if [ -z "$GAMESCOPECMD" ]; then
+	# Set default values
+	: "${OUTPUT_CONNECTOR:=*,eDP-1}"
+	: "${XWAYLAND_COUNT:=2}"
+	: "${TOUCH_MODE:=4}"
+	: "${HIDE_CURSOR_DELAY_MS:=3000}"
+	: "${FADE_OUT_DURATION_MS:=200}"
+
+	CURSOR=""
+	if [ -f "$CURSOR_FILE" ]; then
+		# Use specified cursor if file exists
+		CURSOR="--cursor ${CURSOR_FILE}"
+	fi
+
+	RESOLUTION=""
+	if [ -n "$SCREEN_WIDTH" ] && [ -n "$SCREEN_HEIGHT" ]; then
+		RESOLUTION="-W $SCREEN_WIDTH -H $SCREEN_HEIGHT"
+	fi
+
+	INTERNAL_RESOLUTION=""
+	if [ -n "$INTERNAL_WIDTH" ] && [ -n "$INTERNAL_HEIGHT" ] ; then
+		INTERNAL_RESOLUTION="-w $INTERNAL_WIDTH -h $INTERNAL_HEIGHT"
+	fi
+
+	DRM_MODE_OPTION=""
+	if [ -n "$DRM_MODE" ] ; then
+		DRM_MODE_OPTION="--generate-drm-mode $DRM_MODE"
+	fi
+
+	ORIENTATION_OPTION=""
+	if [ -n "$ORIENTATION" ] ; then
+		ORIENTATION_OPTION="--force-orientation $ORIENTATION"
+	fi
+
+	ADAPTIVE_SYNC_OPTION=""
+	if [ -n "$ADAPTIVE_SYNC" ]; then
+		ADAPTIVE_SYNC_OPTION="--adaptive-sync"
+	fi
+
+	FORCE_COMPOSITION_OPTION=""
+	if [ -n "$FORCE_COMPOSITION" ]; then
+		FORCE_COMPOSITION_OPTION="--force-composition"
+	fi
+
+	PANEL_TYPE_OPTION=""
+	if [ -n "$PANEL_TYPE" ] && gamescope_has_option "--force-panel-type"; then
+		PANEL_TYPE_OPTION="--force-panel-type $PANEL_TYPE"
+	fi
+
+	BYPASS_STEAM_RESOLUTION_OPTION=""
+	if [ ! -n "$DONT_BYPASS_RESOLUTION" ] && gamescope_has_option "--bypass-steam-resolution"; then
+		BYPASS_STEAM_RESOLUTION_OPTION="--bypass-steam-resolution"
+	fi
+
+	CUSTOM_REFRESH_RATES_OPTION=""
+	if [ -n "$CUSTOM_REFRESH_RATES" ] && gamescope_has_option "--custom-refresh-rates"; then
+		CUSTOM_REFRESH_RATES_OPTION="--custom-refresh-rates $CUSTOM_REFRESH_RATES"
+	fi
+
+	BACKEND_OPTION=""
+	# Check if an older GPU that needs the SDL workaround is in use.
+	if [ -n "$BACKEND" ] && gamescope_has_option "--backend"; then
+		BACKEND_OPTION="--backend $BACKEND"
+	fi
+
+	DISABLE_TOUCH_CLICK_OPTION=""
+	if [ -n "$DISABLE_TOUCH_CLICK" ] && gamescope_has_option "--disable-touch-click"; then
+		DISABLE_TOUCH_CLICK_OPTION="--disable-touch-click"
+	fi
+
+	MURA_OPTION=""
+	if [ -n "$MURA" ] && gamescope_has_option "--mura-map"; then
+		MURA_OPTION="--mura-map $MURA"
+	fi
+
+	TOUCH_GESTURES_OPTION=""
+	if [ -n "$TOUCH_GESTURES" ] && gamescope_has_option "--touch-gestures"; then
+		TOUCH_GESTURES_OPTION="--touch-gestures"
+	fi
+
+	GAMESCOPECMD="/usr/bin/gamescope \
+		$CURSOR \
+		$RESOLUTION \
+		$INTERNAL_RESOLUTION \
+		$DRM_MODE_OPTION \
+		$ORIENTATION_OPTION \
+		$ADAPTIVE_SYNC_OPTION \
+		$FORCE_COMPOSITION_OPTION \
+		$PANEL_TYPE_OPTION \
+		$BYPASS_STEAM_RESOLUTION_OPTION \
+		$CUSTOM_REFRESH_RATES_OPTION \
+		$BACKEND_OPTION \
+		$DISABLE_TOUCH_CLICK_OPTION \
+		$MURA_OPTION \
+		$TOUCH_GESTURES_OPTION \
+		--prefer-output $OUTPUT_CONNECTOR \
+		--xwayland-count $XWAYLAND_COUNT \
+		--default-touch-mode $TOUCH_MODE \
+		--hide-cursor-delay $HIDE_CURSOR_DELAY_MS \
+		--fade-out-duration $FADE_OUT_DURATION_MS \
+		--steam"
 fi
 
-if [ -z "$GAMESCOPECMD" ] ; then
-    RESOLUTION=""
-    if [ -n "$SCREEN_WIDTH" ] && [ -n "$SCREEN_HEIGHT" ] ; then
-        RESOLUTION="-W $SCREEN_WIDTH -H $SCREEN_HEIGHT"
-    fi
+# Add socket and stats read
+GAMESCOPECMD+=" -R $socket -T $stats"
 
-    if [ -z $VULKAN_ADAPTER ]; then
-        GAMESCOPECMD="/usr/bin/gamescope \
-        $CURSOR \
-        --max-scale 2 \
-        --adaptive-sync \
-        -e \
-        $RESOLUTION \
-        --xwayland-count 2 \
-        -O *,eDP-1 \
-        --default-touch-mode 4 \
-        --hide-cursor-delay $CURSOR_DELAY \
-        --fade-out-duration 200 \
-        --cursor-scale-height 720 \
-        -R $socket -T $stats"
-     else
-        GAMESCOPECMD="/usr/bin/gamescope \
-        $CURSOR \
-        --max-scale 2 \
-        --adaptive-sync \
-        -e \
-        $RESOLUTION \
-        --xwayland-count 2 \
-        -O *,eDP-1 \
-        --default-touch-mode 4 \
-        --hide-cursor-delay $CURSOR_DELAY \
-        --fade-out-duration 200 \
-        --cursor-scale-height 720 \
-        --prefer-vk-device $VULKAN_ADAPTER \
-        -R $socket -T $stats"
-     fi
-
-else
-    # Add socket and stats read
-    if [ -z $VULKAN_ADAPTER ]; then
-        GAMESCOPECMD+=" -R $socket -T $stats"
-    else
-        GAMESCOPECMD+=" --prefer-vk-device $VULKAN_ADAPTER -R $socket -T $stats"
-    fi
+# Add custom vulkan adapter if specified
+if [ -n "$VULKAN_ADAPTER" ]; then
+	GAMESCOPECMD+=" --prefer-vk-device $VULKAN_ADAPTER"
 fi
 
 # Attempt to fallback to a desktop session if something goes wrong too many times
@@ -204,40 +269,40 @@ short_session_duration=60
 short_session_count_before_reset=3
 SECONDS=0
 
-short_session_count=$(< "$short_session_tracker_file" wc -l)
+short_session_count=$(wc <"$short_session_tracker_file" -l)
 
 if [[ "$short_session_count" -ge "$short_session_count_before_reset" ]]; then
-    echo >&2 "gamescope-session-plus: detected broken ${CLIENT} or gamescope failure, will try to reset the session"
+	echo >&2 "gamescope-session-plus: detected broken ${CLIENT} or gamescope failure, will try to reset the session"
 
-    short_session_recover
+	short_session_recover
 
-    # rearm
-    rm "$short_session_tracker_file"
-    exit 1
+	# rearm
+	rm "$short_session_tracker_file"
+	exit 1
 fi
 
 # Log rotate the last session
 if [ -f "${HOME}"/.${CLIENT}-stdout.log ]; then
-    cp "${HOME}"/.${CLIENT}-stdout.log "${HOME}"/.${CLIENT}-stdout.log.old
+	cp "${HOME}"/.${CLIENT}-stdout.log "${HOME}"/.${CLIENT}-stdout.log.old
 fi
 if [ -f "${HOME}"/.gamescope-stdout.log ]; then
-    cp "${HOME}"/.gamescope-stdout.log "${HOME}"/.gamescope-stdout.log.old
+	cp "${HOME}"/.gamescope-stdout.log "${HOME}"/.gamescope-stdout.log.old
 fi
 if [ -f "${HOME}"/.gamescope-cmd.log ]; then
-    cp "${HOME}"/.gamescope-cmd.log "${HOME}"/.gamescope-cmd.log.old
+	cp "${HOME}"/.gamescope-cmd.log "${HOME}"/.gamescope-cmd.log.old
 fi
 
 # Start gamescope compositor, log it's output and background it
-echo $GAMESCOPECMD > "${HOME}"/.gamescope-cmd.log
-$GAMESCOPECMD > "${HOME}"/.gamescope-stdout.log 2>&1 &
+echo $GAMESCOPECMD >"${HOME}"/.gamescope-cmd.log
+$GAMESCOPECMD >"${HOME}"/.gamescope-stdout.log 2>&1 &
 gamescope_pid="$!"
 
-if read -r -t 3 response_x_display response_wl_display <> "$socket"; then
+if read -r -t 15 response_x_display response_wl_display <> "$socket"; then
 	export DISPLAY="$response_x_display"
 	export GAMESCOPE_WAYLAND_DISPLAY="$response_wl_display"
 	# We're done!
 else
-	echo "gamescope failed" >> "$short_session_tracker_file"
+	echo "gamescope failed" >>"$short_session_tracker_file"
 	kill -9 "$gamescope_pid"
 	wait
 	exit 1
@@ -248,39 +313,37 @@ fi
 post_gamescope_start
 
 # Input method support if present
-if command -v /usr/bin/ibus-daemon > /dev/null; then
-    /usr/bin/ibus-daemon -d -r --panel=disable --emoji-extension=disable
-fi
-
-if [[ ":Galileo:Jupiter:" =~ "$(cat /sys/devices/virtual/dmi/id/product_name)" ]]; then
-        systemd-inhibit --what=handle-suspend-key:handle-power-key:handle-hibernate-key --who=gamescope-session --why="gamescope-session handles power button events" sleep infinity &
-        inhibitor_pid="$!"
-
-        (while true; do
-            python /usr/lib/hwsupport/power-button-handler.py
-        done) &
+if command -v /usr/bin/ibus-daemon >/dev/null; then
+	/usr/bin/ibus-daemon -d -r --panel=disable --emoji-extension=disable
 fi
 
 # If we have mangoapp binary start it
-if command -v mangoapp > /dev/null; then
+if command -v mangoapp >/dev/null; then
 	(while true; do
-		mangoapp > "${HOME}"/.mangoapp-stdout.log 2>&1
+		mangoapp >"${HOME}"/.mangoapp-stdout.log 2>&1
 	done) &
 fi
 
-# Start any custom/3rd party services here
-/usr/libexec/gs-thirdparty-services
+# Start discover-overlay if discord is installed
+if command -v discover-overlay > /dev/null && grep -q "com.discordapp.Discord" <<< $(/usr/bin/flatpak list --app --columns=application); then
+	env DISPLAY=:0 discover-overlay 2>&1 &
+fi
+
+# If the Sunshine service is enabled, restart it
+if systemctl is-enabled --user sunshine.service; then
+	systemctl restart --user sunshine.service 2>&1 &
+fi
 
 # For compatibility with older user configuration overrides
-if [ -n "$STEAMCMD" ] ; then
+if [ -n "$STEAMCMD" ]; then
 	CLIENTCMD=$STEAMCMD
 fi
 
 # Start client application
-$CLIENTCMD > "${HOME}/.${CLIENT}-stdout.log" 2>&1
+$CLIENTCMD >"${HOME}/.${CLIENT}-stdout.log" 2>&1
 
 if [[ "$SECONDS" -lt "$short_session_duration" ]]; then
-	echo "${CLIENT} failed" >> "$short_session_tracker_file"
+	echo "${CLIENT} failed" >>"$short_session_tracker_file"
 else
 	rm "$short_session_tracker_file"
 fi
@@ -321,7 +384,7 @@ for job in $(jobs -p); do
 	# Warn about unexpected things
 	if [[ $ret != 127 && $job = "$gamescope_pid" ]]; then
 		echo >&2 "gamescope-session-plus: gamescope timed out while exiting, killing"
-	elif [[ $ret != 127 && $job != "$sleep_pid" && $job != "$inhibitor_pid" ]]; then
+	elif [[ $ret != 127 && $job != "$sleep_pid" ]]; then
 		echo >&2 "gamescope-session-plus: unexpected background pid $job at teardown: "
 		# spew some debug about it
 		ps -p "$job" >&2

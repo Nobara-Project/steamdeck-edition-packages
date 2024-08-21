@@ -334,6 +334,9 @@ if systemctl is-enabled --user sunshine.service; then
 	systemctl restart --user sunshine.service 2>&1 &
 fi
 
+# Start any custom/3rd party services here
+/usr/libexec/gs-thirdparty-services
+
 # For compatibility with older user configuration overrides
 if [ -n "$STEAMCMD" ]; then
 	CLIENTCMD=$STEAMCMD

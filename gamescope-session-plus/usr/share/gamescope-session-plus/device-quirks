@@ -62,7 +62,6 @@ if [[ ":$GDP_LIST:" =~ ":$SYS_ID:"  ]]; then
   OUTPUT_CONNECTOR='*,DSI-1'
   DRM_MODE=fixed
   ORIENTATION=right
-  TOUCH_GESTURES=1
 fi
 
 # GPD Win 3 specifc quirk to prevent crashing
@@ -72,22 +71,33 @@ if [[ ":G1618-03:" =~ ":$SYS_ID:"  ]]; then
   OUTPUT_CONNECTOR='*,DSI-1'
   DRM_MODE=fixed
   ORIENTATION=right
-  TOUCH_GESTURES=1
 fi
 
 #GPD Win 4 supports 40-60hz refresh rate changing
 if [[ ":G1618-04:" =~ ":$SYS_ID:"  ]]; then
-  TOUCH_GESTURES=1
+  CUSTOM_REFRESH_RATES=40,60
+  export STEAM_DISPLAY_REFRESH_LIMITS=40,60
+fi
 
+# GPD Win Max 2 supports 40,60hz
+if [[ ":G1619-04:" =~ ":$SYS_ID:"  ]]; then
+  CUSTOM_REFRESH_RATES=40,60
   export STEAM_DISPLAY_REFRESH_LIMITS=40,60
 fi
 
 # GPD Win mini
 if [[ ":G1617-01:" =~ ":$SYS_ID:"  ]]; then
-  TOUCH_GESTURES=1
-  ORIENTATION=""
   if ( xrandr --prop 2>$1 | grep -e "1080x1920 " > /dev/null ) ; then
      ORIENTATION=right
+  fi
+
+  # 2024 Model w/ VRR
+  if ( xrandr --prop 2>$1 | grep -e "1920x1080 " > /dev/null ) ; then
+    PANEL_TYPE=external
+    ADAPTIVE_SYNC=1
+
+    # Set refresh rate range and enable refresh rate switching
+    export STEAM_DISPLAY_REFRESH_LIMITS=60,120
   fi
 fi
 
@@ -105,7 +115,6 @@ if [[ ":Jupiter:Galileo:" =~ ":$SYS_ID:" ]]; then
 
   # Prevent default power button behavior
   systemd-inhibit --what=handle-suspend-key:handle-power-key:handle-hibernate-key --who=gamescope-session --why="gamescope-session handles power button events" sleep infinity &
-  inhibitor_pid="$!"
 
   # Start SteamOS's power button handler daemon, this passes power button events to Steam.
   if command -v /usr/bin/powerbuttond > /dev/null; then
@@ -114,7 +123,7 @@ if [[ ":Jupiter:Galileo:" =~ ":$SYS_ID:" ]]; then
     done) &
   elif [ -f /usr/lib/hwsupport/power-button-handler.py ]; then
     (while true; do
-      python3 /usr/lib/hwsupport/power-button-handler.py
+      /usr/bin/python3 /usr/lib/hwsupport/power-button-handler.py
     done) &
   fi
 else
@@ -123,7 +132,7 @@ else
 fi
 
 # Steam Deck (LCD)
-if [[ ":Jupiter:" =~ ":$SYS_ID:"  ]]; then
+if [[ ":Jupiter:" =~ ":$SYS_ID:" ]]; then
   export STEAM_DISPLAY_REFRESH_LIMITS=40,60
 
   if [ -f "/usr/share/plymouth/themes/steamos/steamos-jupiter.png" ]; then
@@ -132,12 +141,7 @@ if [[ ":Jupiter:" =~ ":$SYS_ID:"  ]]; then
 fi
 
 # Steam Deck (OLED)
-if [[ ":Galileo:" =~ ":$SYS_ID:"  ]]; then
-  MURA_PATH=$(galileo-mura-setup)
-  if [ $? -eq 0 ]; then
-    MURA="$MURA_PATH"
-  fi
-
+if [[ ":Galileo:" =~ ":$SYS_ID:" ]]; then
   export STEAM_DISPLAY_REFRESH_LIMITS=45,90
 
   export STEAM_GAMESCOPE_FORCE_HDR_DEFAULT=1
@@ -149,8 +153,8 @@ if [[ ":Galileo:" =~ ":$SYS_ID:"  ]]; then
   fi
 fi
 
-# ROG Ally
-if [[ ":ROG Ally RC71L:" =~ ":$SYS_ID:"  ]]; then
+# ROG Ally & ROG Ally X
+if [[ ":ROG Ally RC71L:ROG Ally X RC72LA:" =~ ":$SYS_ID:" ]]; then
   PANEL_TYPE=external
   ADAPTIVE_SYNC=1
 
@@ -161,28 +165,22 @@ fi
 # Lenovo Legion Go
 if [[ ":83E1:" =~ ":$SYS_ID:"  ]]; then
   ORIENTATION=left
-  ADAPTIVE_SYNC=1
   CUSTOM_REFRESH_RATES=60,144
+
+  # Adaptive brightness script values
+  ADAPTIVE_BRIGHTNESS_MIN_BRIGHTNESS_LEVEL=400
+  ADAPTIVE_BRIGHTNESS_SENSITIVITY_FACTOR=1.0
+  ADAPTIVE_BRIGHTNESS_SENSOR_SHIFT=-3
 
   # Set refresh rate range and enable refresh rate switching
   export STEAM_DISPLAY_REFRESH_LIMITS=60,144
 fi
 
-# Aya Neo 2 & 2S
-if [[ ":AYANEO 2:AYANEO 2S:" =~ ":$SYS_ID:"  ]]; then
-  # enable lower resolution for better out of the box performance
-  SCREEN_WIDTH=1920
-  SCREEN_HEIGHT=1200
-  INTERNAL_WIDTH=1280
-  INTERNAL_HEIGHT=800
-fi
-
-# Minisforum V3 Tablet
+# Minisforum V3
 if [[ ":V3:" =~ ":$SYS_ID:"  ]]; then
-  TOUCH_GESTURES=1
-fi
+  PANEL_TYPE=external
+  ADAPTIVE_SYNC=1
 
-# GPUs that require the SDL backend
-if [ -x /usr/libexec/gamescope-sdl-workaround ] && /usr/libexec/gamescope-sdl-workaround; then
-  BACKEND=sdl
+  # Set refresh rate range and enable refresh rate switching
+  export STEAM_DISPLAY_REFRESH_LIMITS=36,165
 fi

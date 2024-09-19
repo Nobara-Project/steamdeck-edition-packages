@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 declare -r CLIENT=$1
 declare -r CLIENT_CONFIG_DIR_USR=/usr/share/gamescope-session-plus/sessions.d
@@ -39,6 +39,15 @@ gamescope_has_option() {
 # color image
 export INTEL_DEBUG=norbc
 export mesa_glthread=true
+
+# This should be used by default by gamescope. Cannot hurt to force it anyway.
+# Reported better framelimiting with this enabled
+if /usr/libexec/gamescope-sdl-workaround; then
+	# Skip on legacy hardware
+	export ENABLE_GAMESCOPE_WSI=0
+else
+	export ENABLE_GAMESCOPE_WSI=1
+fi
 
 # Force Qt applications to run under xwayland
 export QT_QPA_PLATFORM=xcb
@@ -312,6 +321,65 @@ fi
 # Run session defined hook
 post_gamescope_start
 
+# Prevent default power button behavior
+systemd-inhibit --what=handle-suspend-key:handle-power-key:handle-hibernate-key --who=gamescope-session --why="gamescope-session handles power button events" sleep infinity &
+
+# Start SteamOS's power button handler daemon, this passes power button events to Steam.
+if command -v /usr/bin/powerbuttond > /dev/null; then
+    (while true; do
+        /usr/bin/powerbuttond
+    done) &
+elif [ -f /usr/lib/hwsupport/power-button-handler.py ]; then
+    (while true; do
+        /usr/bin/python3 /usr/lib/hwsupport/power-button-handler.py
+    done) &
+fi
+
+# Check if 'gamescope-htpc-common' is installed
+if rpm -qa | grep -q 'gamescope-htpc-common'; then
+
+    # Update nobara first
+    # Run the dnf check-update command and capture the output
+    output=$(dnf check-update --refresh)
+
+    # Use awk to separate the output into sections and check for updates
+    updates=$(echo "$output" | awk 'BEGIN {found=0} /^$/ {found=1; next} found {print}')
+
+    # Check if there are any updates
+    if [[ -n "$updates" ]]; then
+        echo "Updates are available:"
+        nobara-updater-gamescope-gui >"${HOME}/.nobara-updater-gamescope-gui.log" 2>&1
+    fi
+
+    # List of Flatpak package names for the browsers
+    browsers=(
+        "com.google.Chrome"
+        "org.mozilla.firefox"
+        "com.microsoft.Edge"
+        "com.brave.Browser"
+    )
+
+    # Flag to track if any browser is installed
+    browser_installed=false
+
+    # Check if any of the browsers are already installed
+    for browser in "${browsers[@]}"; do
+        if flatpak list | grep -q "$browser"; then
+            echo "$browser is already installed."
+            browser_installed=true
+            break  # Exit the loop if any browser is found
+        fi
+    done
+
+    # If no browsers are installed, run nobara-browser-select
+    if [ "$browser_installed" = false ]; then
+        echo "No browsers are installed. Running nobara-browser-select..."
+        nobara-browser-select
+    else
+        echo "At least one browser is already installed. Exiting."
+    fi
+fi
+
 # Input method support if present
 if command -v /usr/bin/ibus-daemon >/dev/null; then
 	/usr/bin/ibus-daemon -d -r --panel=disable --emoji-extension=disable
@@ -334,13 +402,15 @@ if systemctl is-enabled --user sunshine.service; then
 	systemctl restart --user sunshine.service 2>&1 &
 fi
 
-# Start any custom/3rd party services here
-/usr/libexec/gs-thirdparty-services
+# Start DeckyLoader
+/usr/bin/gamescope-deckyloader $USER
+
 
 # For compatibility with older user configuration overrides
 if [ -n "$STEAMCMD" ]; then
 	CLIENTCMD=$STEAMCMD
 fi
+
 
 # Start client application
 $CLIENTCMD >"${HOME}/.${CLIENT}-stdout.log" 2>&1

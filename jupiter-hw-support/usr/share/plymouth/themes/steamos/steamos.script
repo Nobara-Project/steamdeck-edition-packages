@@ -1,4 +1,4 @@
-image = Image("steamos.png");
+image = Image("steamos-jupiter.png");
 # Earlier kernel versions, lack the panel rotation quirk
 #rotated_image = image.Rotate( Math.Pi / 2.0 );
 rotated_image = image;

@@ -335,50 +335,8 @@ elif [ -f /usr/lib/hwsupport/power-button-handler.py ]; then
     done) &
 fi
 
-# Check if 'gamescope-htpc-common' is installed
-if rpm -qa | grep -q 'gamescope-htpc-common'; then
-
-    # Update nobara first
-    # Run the dnf check-update command and capture the output
-    output=$(dnf check-update --refresh)
-
-    # Use awk to separate the output into sections and check for updates
-    updates=$(echo "$output" | awk 'BEGIN {found=0} /^$/ {found=1; next} found {print}')
-
-    # Check if there are any updates
-    if [[ -n "$updates" ]]; then
-        echo "Updates are available:"
-        nobara-updater-gamescope-gui >"${HOME}/.nobara-updater-gamescope-gui.log" 2>&1
-    fi
-
-    # List of Flatpak package names for the browsers
-    browsers=(
-        "com.google.Chrome"
-        "org.mozilla.firefox"
-        "com.microsoft.Edge"
-        "com.brave.Browser"
-    )
-
-    # Flag to track if any browser is installed
-    browser_installed=false
-
-    # Check if any of the browsers are already installed
-    for browser in "${browsers[@]}"; do
-        if flatpak list | grep -q "$browser"; then
-            echo "$browser is already installed."
-            browser_installed=true
-            break  # Exit the loop if any browser is found
-        fi
-    done
-
-    # If no browsers are installed, run nobara-browser-select
-    if [ "$browser_installed" = false ]; then
-        echo "No browsers are installed. Running nobara-browser-select..."
-        nobara-browser-select
-    else
-        echo "At least one browser is already installed. Exiting."
-    fi
-fi
+# Attempt any enabled automounts
+/usr/libexec/nobara-automount
 
 # Input method support if present
 if command -v /usr/bin/ibus-daemon >/dev/null; then
@@ -402,9 +360,63 @@ if systemctl is-enabled --user sunshine.service; then
 	systemctl restart --user sunshine.service 2>&1 &
 fi
 
-# Start DeckyLoader
-/usr/bin/gamescope-deckyloader $USER
+# Check network connectivity with retries
+max_attempts=5
+attempt=0
 
+while (( attempt < max_attempts )); do
+    if ping -c 1 1.1.1.1 &> /dev/null; then
+        echo "Network is online."
+        break
+    else
+        echo "Network is offline. Retrying in 1 second..."
+        sleep 1
+        ((attempt++))
+    fi
+done
+
+if (( attempt == max_attempts )); then
+    echo "Network is still offline after $max_attempts attempts."
+fi
+
+# Check if 'gamescope-htpc-common' is installed
+if rpm -q 'gamescope-htpc-common'; then
+	perform_update=false
+	# File exists, check its contents
+	if ! grep -q 'disabled' /etc/nobara/gamescope/autoupdate.conf; then
+	# If the file contains "disabled", do not perform the update
+	perform_update=true
+	fi
+
+	# If updates are allowed, proceed with the update process
+	if [ "$perform_update" = true ]; then
+		# Update nobara first
+		# Run the dnf check-update command and capture the output
+		output=$(dnf check-update --refresh)
+		# Use awk to separate the output into sections and check for updates
+		updates=$(echo "$output" | awk 'BEGIN {found=0} /^$/ {found=1; next} found {print}')
+		# Check if there are any updates
+		if [[ -n "$updates" ]]; then
+			echo "Updates are available:"
+			nobara-updater-gamescope-gui >"${HOME}/.nobara-updater-gamescope-gui.log" 2>&1
+		fi
+	else
+		echo "Automatic updates are disabled in /etc/nobara/gamescope/autoupdate.conf."
+	fi
+fi
+
+# File exists, check its contents
+if ! grep -q 'disabled' /etc/nobara/decky_loader/autoupdate.conf; then
+	# Proceed with loading Decky Loader
+	/usr/bin/gamescope-deckyloader $USER
+fi
+
+
+# Start HHD
+if [ -f /usr/bin/hhd-run.sh ]; then
+    # Start HHD
+	/usr/bin/hhd-run.sh $USER
+fi
 
 # For compatibility with older user configuration overrides
 if [ -n "$STEAMCMD" ]; then

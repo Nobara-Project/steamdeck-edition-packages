@@ -38,6 +38,9 @@ if [[ $EUID != 0 ]]; then
   exit 1
 fi
 
+# Stop Deckyloader
+systemctl stop plugin_loader.service
+
 # GNOME/GDM
 if [[ ! -z $(systemctl status gdm | grep running) ]]; then
   # gdm needs reload + TimedLogin instead of full restart

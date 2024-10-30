@@ -114,6 +114,31 @@ if [[ $EUID != 0 ]]; then
   exit 1
 fi
 
+# Find the home directory of the specified user
+USER_HOME=$(getent passwd "$GDMUSER" | cut -d: -f6)
+
+# Check if /etc/nobara/decky_loader/autoupdate.conf exists
+if [ ! -f /etc/nobara/decky_loader/autoupdate.conf ]; then
+  if [ -f /etc/systemd/system/plugin_loader.service ]; then
+    # File does not exist, proceed with stopping Decky Loader
+    systemctl stop plugin_loader.service
+    # Make sure no lingering Deckyloader processes
+    ps aux | grep "$USER_HOME/homebrew/plugins/" | grep -v grep | awk '{print $2}' | xargs -r kill -9
+  fi
+else
+    # File exists, check its contents
+    if ! grep -q 'disabled' /etc/nobara/decky_loader/autoupdate.conf; then
+      if [ -f /etc/systemd/system/plugin_loader.service ]; then
+
+        # Proceed with stopping Decky Loader
+        systemctl stop plugin_loader.service
+        # Make sure no lingering Deckyloader processes
+        ps aux | grep "$USER_HOME/homebrew/plugins/" | grep -v grep | awk '{print $2}' | xargs -r kill -9
+      fi
+    fi
+fi
+
+
 # GNOME/GDM
 if [[ ! -z $(systemctl status gdm | grep running) ]]; then
   # set new default session

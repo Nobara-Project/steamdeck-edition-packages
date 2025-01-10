@@ -9,6 +9,16 @@ else
 fi
 CPU_VENDOR="$(lscpu | grep "Vendor ID" | cut -d : -f 2 | xargs)"
 
+# nvidia rendering fixup
+if [ -f /bin/lspci ]; then
+  nvgpu=$(lspci | grep -iE 'VGA|3D' | grep -i nvidia | cut -d ":" -f 3)
+  if [[ ! -z $nvgpu ]]; then
+    export GAMESCOPE_WSI_HIDE_PRESENT_WAIT_EXT=1
+    export ENABLE_GAMESCOPE_HDR=1
+  fi
+fi
+
+
 # OXP 60Hz Devices
 OXP_LIST="ONE XPLAYER:ONEXPLAYER 1 T08:ONEXPLAYER 1S A08:ONEXPLAYER 1S T08:ONEXPLAYER mini A07:ONEXPLAYER mini GA72:ONEXPLAYER mini GT72:ONEXPLAYER Mini Pro:ONEXPLAYER GUNDAM GA72:ONEXPLAYER 2 ARP23:ONEXPLAYER 2 PRO ARP23H:ONEXPLAYER 2 PRO ARP23P:ONEXPLAYER 2 PRO ARP23P EVA-01"
 AOK_LIST="AOKZOE A1 AR07:AOKZOE A1 Pro"

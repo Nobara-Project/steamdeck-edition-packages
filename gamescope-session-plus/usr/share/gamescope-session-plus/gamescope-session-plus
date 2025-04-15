@@ -405,18 +405,6 @@ if rpm -q 'gamescope-htpc-common'; then
 	fi
 fi
 
-# File exists, check its contents
-if ! grep -q 'disabled' /etc/nobara/decky_loader/autoupdate.conf; then
-	# Proceed with loading Decky Loader
-	/usr/bin/gamescope-deckyloader $USER
-fi
-
-
-# Start HHD
-if [ -f /usr/bin/hhd-run.sh ]; then
-    # Start HHD
-	/usr/bin/hhd-run.sh $USER
-fi
 
 # For compatibility with older user configuration overrides
 if [ -n "$STEAMCMD" ]; then

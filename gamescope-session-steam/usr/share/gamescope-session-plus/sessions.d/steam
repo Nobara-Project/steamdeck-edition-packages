@@ -76,9 +76,6 @@ export STEAM_GAMESCOPE_NIS_SUPPORTED=1
 # Let steam know it can unmount drives without superuser privileges
 export STEAM_ALLOW_DRIVE_UNMOUNT=1
 
-# Allow formatting external drives
-export STEAM_ALLOW_DRIVE_ADOPT=1
-
 # We no longer need to set GAMESCOPE_EXTERNAL_OVERLAY from steam, mangoapp now does it itself
 export STEAM_DISABLE_MANGOAPP_ATOM_WORKAROUND=1
 
@@ -99,26 +96,31 @@ export STEAM_ENABLE_CEC=0
 export QT_IM_MODULE=steam
 export GTK_IM_MODULE=Steam
 
-# Use SteamOS background if exists
-if [ -f "/usr/share/steamos/steamos.png" ] ; then
-  export STEAM_UPDATEUI_PNG_BACKGROUND=/usr/share/steamos/steamos.png
+board_name=$(cat /sys/class/dmi/id/board_name)
+if [[ $board_name = "Galileo" ]]; then
+        ui_background=/usr/share/plymouth/themes/steamos/steamos-galileo.png
+elif [[ $board_name = "Jupiter" ]]; then
+        ui_background=/usr/share/plymouth/themes/steamos/steamos-jupiter.png
+else
+        ui_background=/usr/share/plymouth/themes/steamos/steamos.png
 fi
+export STEAM_UPDATEUI_PNG_BACKGROUND=$ui_background
 
 export CURSOR_FILE="${HOME}/.local/share/Steam/tenfoot/resource/images/cursors/arrow.png"
 
 export XCURSOR_THEME=steam
 export XCURSOR_SCALE=256
 
-export CLIENTCMD="steam -steamdeck -steamos3 -steampal -steamdeck -gamepadui"
-
-# Workaround for Steam login issue while Steam client change propagates out of Beta
-touch "${HOME}"/.steam/root/config/SteamAppData.vdf || true
+export CLIENTCMD="/usr/share/opengamepadui/opengamepad-ui.x86_64 --overlay-mode -- steam -steamdeck -steamos3 -steampal -steamdeck -gamepadui"
 
 if [[ -f "/usr/share/gamescope-session-plus/bootstraplinux_ubuntu12_32.tar.xz" ]] && ! grep -q "set_bootstrap=1" "$STEAM_BOOTSTRAP_CONFIG"; then
     mkdir -p ~/.local/share
     tar xf /usr/share/gamescope-session-plus/bootstraplinux_ubuntu12_32.tar.xz -C ~/.local/share
     echo "set_bootstrap=1" >> "$STEAM_BOOTSTRAP_CONFIG"
 fi
+
+# Workaround for Steam login issue while Steam client change propagates out of Beta
+touch "${HOME}"/.steam/root/config/SteamAppData.vdf || true
 
 # Log rotate the last session
 if [ -f "${HOME}"/.steam-tweaks.log ]; then

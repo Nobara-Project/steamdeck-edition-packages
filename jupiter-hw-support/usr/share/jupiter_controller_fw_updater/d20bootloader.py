@@ -759,7 +759,8 @@ def getdevicesjson():
              'build_timestamp': get_dev_build_timestamp(item)[0],
              'secondary_build_timestamp': get_dev_build_timestamp(item)[1],
              'is_bootloader': item['product_id'] == JUPITER_BOOTLOADER_USB_PID,
-             'path': item['path'].decode('utf-8') }
+             'path': item['path'].decode('utf-8'),
+             'bus_type': int(item.get('bus_type', hid.BusType.UNKNOWN).value) }
            for item in rawdevs ]
 
   print(json.dumps(devs))

@@ -1,0 +1,6 @@
+
+ACTION=="remove", GOTO="rtl_wobt_end"
+
+SUBSYSTEM=="usb", ATTR{idVendor}=="13d3", ATTR{idProduct}=="3553", ATTR{power/wakeup}="enabled"
+
+LABEL="rtl_wobt_end"

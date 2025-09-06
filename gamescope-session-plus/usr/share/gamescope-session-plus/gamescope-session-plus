@@ -360,52 +360,6 @@ if systemctl is-enabled --user sunshine.service; then
 	systemctl restart --user sunshine.service 2>&1 &
 fi
 
-# Check network connectivity with retries
-max_attempts=5
-attempt=0
-
-while (( attempt < max_attempts )); do
-    if ping -c 1 1.1.1.1 &> /dev/null; then
-        echo "Network is online."
-        break
-    else
-        echo "Network is offline. Retrying in 1 second..."
-        sleep 1
-        ((attempt++))
-    fi
-done
-
-if (( attempt == max_attempts )); then
-    echo "Network is still offline after $max_attempts attempts."
-fi
-
-# Check if 'gamescope-htpc-common' is installed
-if rpm -q 'gamescope-htpc-common'; then
-	perform_update=false
-	# File exists, check its contents
-	if ! grep -q 'disabled' /etc/nobara/gamescope/autoupdate.conf; then
-	# If the file contains "disabled", do not perform the update
-	perform_update=true
-	fi
-
-	# If updates are allowed, proceed with the update process
-	if [ "$perform_update" = true ]; then
-		# Update nobara first
-		# Run the dnf check-update command and capture the output
-		output=$(dnf check-update --refresh)
-		# Use awk to separate the output into sections and check for updates
-		updates=$(echo "$output" | awk 'BEGIN {found=0} /^$/ {found=1; next} found {print}')
-		# Check if there are any updates
-		if [[ -n "$updates" ]]; then
-			echo "Updates are available:"
-			nobara-updater-gamescope-gui >"${HOME}/.nobara-updater-gamescope-gui.log" 2>&1
-		fi
-	else
-		echo "Automatic updates are disabled in /etc/nobara/gamescope/autoupdate.conf."
-	fi
-fi
-
-
 # For compatibility with older user configuration overrides
 if [ -n "$STEAMCMD" ]; then
 	CLIENTCMD=$STEAMCMD

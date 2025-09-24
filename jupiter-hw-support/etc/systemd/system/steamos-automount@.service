@@ -14,6 +14,6 @@ Description=Mount removable drive %i and notify Steam
 [Service]
 Type=oneshot
 RemainAfterExit=true
-ExecStart=/usr/lib/hwsupport/steamos-automount.sh add %i
-ExecStop=/usr/lib/hwsupport/steamos-automount.sh remove %i
-ExecReload=/usr/lib/hwsupport/steamos-automount.sh retrigger %i
+ExecStart=/usr/libexec/steamos-automount.sh add %i
+ExecStop=/usr/libexec/steamos-automount.sh remove %i
+ExecReload=/usr/libexec/steamos-automount.sh retrigger %i

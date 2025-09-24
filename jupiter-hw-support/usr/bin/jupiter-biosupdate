@@ -72,6 +72,9 @@ if [[ ":Jupiter:Galileo:" =~ ":$SYS_ID:" ]]; then
                       , "F7A0117": { "default": "F7A0120", "samsung": "F7A0120", "beta": null, "samsung_beta": null, "args": "", "auto": "true" }
                       , "F7A0118": { "default": "F7A0120", "samsung": "F7A0120", "beta": null, "samsung_beta": null, "args": "", "auto": "true" }
                       , "F7A0119": { "default": "F7A0120", "samsung": "F7A0120", "beta": null, "samsung_beta": null, "args": "", "auto": "true" }
+                      , "F7A0120": { "default": "F7A0133", "samsung": "F7A0133", "beta": null, "samsung_beta": null, "args": "", "auto": "true" }
+                      , "F7A0121": { "default": "F7A0133", "samsung": "F7A0133", "beta": null, "samsung_beta": null, "args": "", "auto": "true" }
+                      , "F7A0131": { "default": "F7A0133", "samsung": "F7A0133", "beta": null, "samsung_beta": null, "args": "", "auto": "true" }
 
                       , "F7G0003R2":  { "default": "F7G0014T20", "samsung": "F7G0014T20", "beta": null, "samsung_beta": null, "args": "", "auto": "false" }
                       , "F7G0003":    { "default": "F7G0014T20", "samsung": "F7G0014T20", "beta": null, "samsung_beta": null, "args": "", "auto": "false" }
@@ -104,6 +107,10 @@ if [[ ":Jupiter:Galileo:" =~ ":$SYS_ID:" ]]; then
                       , "F7G0103":    { "default": "F7G0107",    "samsung": "F7G0107",    "beta": null, "samsung_beta": null, "args": "", "auto": "false" }
                       , "F7G0104":    { "default": "F7G0107",    "samsung": "F7G0107",    "beta": null, "samsung_beta": null, "args": "", "auto": "false" }
                       , "F7G0105":    { "default": "F7G0107",    "samsung": "F7G0107",    "beta": null, "samsung_beta": null, "args": "", "auto": "false" }
+                      , "F7G0107":    { "default": "F7G0112",    "samsung": "F7G0112",    "beta": null, "samsung_beta": null, "args": "", "auto": "false" }
+                      , "F7G0109":    { "default": "F7G0112",    "samsung": "F7G0112",    "beta": null, "samsung_beta": null, "args": "", "auto": "false" }
+                      , "F7G0110":    { "default": "F7G0112",    "samsung": "F7G0112",    "beta": null, "samsung_beta": null, "args": "", "auto": "false" }
+
                     }'
 
   # Bios to attempt to install

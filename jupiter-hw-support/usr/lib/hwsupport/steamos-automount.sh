@@ -130,7 +130,8 @@ do_mount()
         fi
     else
         echo "Error mounting ${DEVICE}: wrong fstype: ${ID_FS_TYPE} - ${dev_json}"
-        exit 2
+        # exit with 0 instead of 2 so the service unit isnt listed as failed
+        exit 0
     fi
     udisks2_mount_options_conf='/etc/udisks2/mount_options.conf'
     mkdir -p "$(dirname "${udisks2_mount_options_conf}")"

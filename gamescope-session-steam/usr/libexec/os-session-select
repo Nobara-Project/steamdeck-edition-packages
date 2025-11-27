@@ -4,8 +4,6 @@ set -e
 
 die() { echo >&2 "!! $*"; exit 1; }
 
-echo $@ >> /tmp/args
-
 export DESKTOP_WAYLAND=true
 
 SENTINEL_FILE="steamos-session-select"

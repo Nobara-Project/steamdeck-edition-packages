@@ -1,9 +1,3 @@
-/*
-    SPDX-FileCopyrightText: 2014 Marco Martin <mart@kde.org>
-
-    SPDX-License-Identifier: GPL-2.0-or-later
-*/
-
 import QtQuick 2.5
 import QtQuick.Window 2.2
 import org.kde.plasma.core 2.0 as PlasmaCore
@@ -12,23 +6,22 @@ Rectangle {
     id: root
     color: "black"
 
+    // Use the real screen size (don’t hardcode 1280x800)
+    width: Screen.width
+    height: Screen.height
+
     property int stage
 
-    onStageChanged: {
-        if (stage == 2) {
-            introAnimation.running = true;
-        } else if (stage == 5) {
-            introAnimation.target = busyIndicator;
-            introAnimation.from = 1;
-            introAnimation.to = 0;
-            introAnimation.running = true;
-        }
-    }
-
-    width: 1280
-    height: 800
-
     Component.onCompleted: stage = 2
+
+    // Hide cursor everywhere in the splash (see #2)
+    MouseArea {
+        anchors.fill: parent
+        hoverEnabled: true
+        acceptedButtons: Qt.NoButton
+        cursorShape: Qt.BlankCursor
+        z: 999999
+    }
 
     Item {
         id: content
@@ -37,38 +30,18 @@ Rectangle {
 
         Image {
             id: logo
-            //match SDDM/lockscreen avatar positioning
             property real size: PlasmaCore.Units.gridUnit * 24
 
             anchors.centerIn: parent
 
+            // Actually use the size property so the visual center matches expectation
+            width: size
+            height: size
+            fillMode: Image.PreserveAspectFit
+
             source: "images/deck_logo.svgz"
-
-            sourceSize.width: 128
-            sourceSize.height: 128
-        }
-
-        // TODO: port to PlasmaComponents3.BusyIndicator
-        Image {
-            id: busyIndicator
-            //in the middle of the remaining space
-            y: parent.height - (parent.height - logo.y) / 3 - height/2
-            anchors.horizontalCenter: parent.horizontalCenter
-            source: "images/busywidget.svgz"
-            sourceSize.height: PlasmaCore.Units.gridUnit * 2
-            sourceSize.width: PlasmaCore.Units.gridUnit * 2
-            RotationAnimator on rotation {
-                id: rotationAnimator
-                from: 0
-                to: 360
-                // Not using a standard duration value because we don't want the
-                // animation to spin faster or slower based on the user's animation
-                // scaling preferences; it doesn't make sense in this context
-                duration: 2000
-                loops: Animation.Infinite
-                // Don't want it to animate at all if the user has disabled animations
-                running: PlasmaCore.Units.longDuration > 1
-            }
+            sourceSize.width: width
+            sourceSize.height: height
         }
     }
 
@@ -80,5 +53,11 @@ Rectangle {
         to: 1
         duration: PlasmaCore.Units.veryLongDuration * 2
         easing.type: Easing.InOutQuad
+    }
+
+    onStageChanged: {
+        if (stage == 2) {
+            introAnimation.running = true;
+        }
     }
 }

@@ -325,10 +325,8 @@ post_gamescope_start
 systemd-inhibit --what=handle-suspend-key:handle-power-key:handle-hibernate-key --who=gamescope-session --why="gamescope-session handles power button events" sleep infinity &
 
 # Start SteamOS's power button handler daemon, this passes power button events to Steam.
-if command -v /usr/bin/powerbuttond > /dev/null; then
-    (while true; do
-        /usr/bin/powerbuttond
-    done) &
+if [ -f /usr/lib/hwsupport/steamos-powerbuttond ]; then
+    systemctl --user start steamos-powerbuttond
 elif [ -f /usr/lib/hwsupport/power-button-handler.py ]; then
     (while true; do
         /usr/bin/python3 /usr/lib/hwsupport/power-button-handler.py
@@ -359,6 +357,12 @@ fi
 if systemctl is-enabled --user sunshine.service; then
 	systemctl restart --user sunshine.service 2>&1 &
 fi
+
+# nobara
+if systemctl is-enabled --user yumex-updater.service; then
+	systemctl stop --user yumex-updater.service 2>&1 &
+fi
+
 
 # For compatibility with older user configuration overrides
 if [ -n "$STEAMCMD" ]; then

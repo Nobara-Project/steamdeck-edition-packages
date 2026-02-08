@@ -1,5 +1,4 @@
 #! /bin/bash
-
 function short_session_recover {
     mkdir -p ~/.local/share
     # remove some caches and stateful things known to cause Steam to fail to start if corrupt
@@ -111,7 +110,17 @@ export CURSOR_FILE="${HOME}/.local/share/Steam/tenfoot/resource/images/cursors/a
 export XCURSOR_THEME=steam
 export XCURSOR_SCALE=256
 
-export CLIENTCMD="/usr/share/opengamepadui/opengamepad-ui.x86_64 --overlay-mode -- steam -steamdeck -steamos3 -steampal -steamdeck -gamepadui"
+# Detect system ID and CPU vendor
+SYS_ID="$(cat /sys/devices/virtual/dmi/id/product_name | tr '[:lower:]' '[:upper:]')"
+
+if [[ ":JUPITER:GALILEO:" =~ ":$SYS_ID:" ]]; then
+    export CLIENTCMD="steam -steamdeck -steamos3 -steampal -steamdeck -gamepadui"
+else
+    export CLIENTCMD="/usr/share/opengamepadui/opengamepad-ui.x86_64 --overlay-mode -- steam -steamdeck -steamos3 -steampal -steamdeck -gamepadui"
+fi
+
+# Workaround for Steam login issue while Steam client change propagates out of Beta
+touch "${HOME}"/.steam/root/config/SteamAppData.vdf || true
 
 if [[ -f "/usr/share/gamescope-session-plus/bootstraplinux_ubuntu12_32.tar.xz" ]] && ! grep -q "set_bootstrap=1" "$STEAM_BOOTSTRAP_CONFIG"; then
     mkdir -p ~/.local/share
@@ -119,8 +128,6 @@ if [[ -f "/usr/share/gamescope-session-plus/bootstraplinux_ubuntu12_32.tar.xz" ]
     echo "set_bootstrap=1" >> "$STEAM_BOOTSTRAP_CONFIG"
 fi
 
-# Workaround for Steam login issue while Steam client change propagates out of Beta
-touch "${HOME}"/.steam/root/config/SteamAppData.vdf || true
 
 # Log rotate the last session
 if [ -f "${HOME}"/.steam-tweaks.log ]; then

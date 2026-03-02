@@ -7,5 +7,6 @@ then
     exec pkexec --disable-internal-agent "$0" "$@"
 fi
 
-exec /usr/bin/jupiter-biosupdate "$@"
-
+if [ -x /usr/bin/jupiter-biosupdate ]; then
+    exec /usr/bin/jupiter-biosupdate "$@"
+fi

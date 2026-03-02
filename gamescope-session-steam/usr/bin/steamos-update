@@ -1,27 +1,143 @@
 #!/usr/bin/bash
 
 # The Steam client is known to call this script with the following parameter combinations:
-# steamos-update --supports-duplicate-detection     -- should do nothing
-# steamos-update --enable-duplicate-detection check -- should check for update
-# steamos-update check                              -- should check for update
-# steamos-update --enable-duplicate-detection       -- should perform an update
-# steamos-update                                    -- should perform an update
+# steamos-update --supports-duplicate-detection      -- should do nothing
+# steamos-update --enable-duplicate-detection check  -- should check for update
+# steamos-update check                               -- should check for update
+# steamos-update --enable-duplicate-detection        -- should perform an update
+# steamos-update                                     -- should perform an update
 
+# Exit Codes:
+# 0: Success
+# 7: Failure / no update available (Steam expects 7 for "no update")
 
+DEBUG_LOG="/tmp/steamos-update.debug"
+CHECK_LOG="/tmp/steamos-update.log"
+
+echo "==== steamos-update start $(date -Is) ====" >> "$DEBUG_LOG"
+echo "EUID=$(id -u) USER=${USER-} HOME=${HOME-} SHELL=${SHELL-}" >> "$DEBUG_LOG"
+
+# Fake upgrade progress bar
+_fake_progress() {
+    local value=0
+    while [ ! -f /tmp/upgrade-check ]; do
+        sleep 12
+        if [ "$value" -lt 100 ]; then
+            echo "${value}%"
+            value=$((value + 1))
+        fi
+    done
+    echo "100%"
+}
+
+_upgrade() {
+    # Log rotate the last session (best-effort)
+    if [ -n "${HOME-}" ] && [ -f "${HOME}/.steamos-update.log" ]; then
+        cp "${HOME}/.steamos-update.log" "${HOME}/.steamos-update.log.old" 2>/dev/null || true
+    fi
+
+    # Run update; always write /tmp/upgrade-check so progress can't hang forever
+    nobara-sync cli >"${HOME:-/tmp}/.steamos-update.log" 2>&1
+    rc=$?
+    echo "$rc" > /tmp/upgrade-check
+    return 0
+}
+
+# First gamemode bootstrap fixup
+_fixup_file="${HOME}"/nobara-updater/fixups/first_steam_gamemode_boostrap
+if [[ ! -f "$_fixup_file" ]]; then
+    mkdir -p "$(dirname "$_fixup_file")"
+    touch "$_fixup_file"
+    sync "$_fixup_file"
+    systemctl restart graphical.target
+    exit 7
+fi
+
+_CHECK=
+_EXIT=
+
+: > /tmp/updateoption
 while [[ $# -gt 0 ]]; do
-  case $1 in
-    check)
-      CHECK=1
-      shift
-      ;;
-    --supports-duplicate-detection)
-      EXIT=1
-      shift
-      ;;
-    *)
-      shift
-      ;;
-  esac
+    printf '%s\n' "$1" >> /tmp/updateoption
+    case "$1" in
+        check)
+            _CHECK=1
+            shift
+            ;;
+        --supports-duplicate-detection)
+            _EXIT=1
+            shift
+            ;;
+        *)
+            shift
+            ;;
+    esac
 done
 
-exit 0 # tells Steam client there is no update to perform
+if [[ -n "${_EXIT}" ]]; then
+    exit 0
+fi
+
+if ! command -v nobara-sync >/dev/null 2>&1; then
+    echo "nobara-sync not installed" >> "$DEBUG_LOG"
+    exit 7
+fi
+
+if [[ -n "${_CHECK}" ]]; then
+    echo "MODE=CHECK" >> "$DEBUG_LOG"
+
+    if [ -f /tmp/upgrade-installed ]; then
+        echo "upgrade already installed" >> "$DEBUG_LOG"
+        exit 7
+    fi
+
+    if ! wget -q --spider https://github.com; then
+        echo "connectivity check failed" >> "$DEBUG_LOG"
+        exit 7
+    fi
+
+    if ! command -v yumex_updater >/dev/null 2>&1; then
+        echo "yumex_updater not found in PATH" >> "$DEBUG_LOG"
+        exit 7
+    fi
+
+    echo "---- yumex_updater check $(date -Is) ----" >> "$CHECK_LOG"
+    yumex_updater --check --refresh --json >> "$CHECK_LOG" 2>&1
+    rc=$?
+    echo "yumex_updater rc=$rc" >> "$CHECK_LOG"
+
+    if [ "$rc" -eq 100 ]; then
+        echo "RESULT: updates available" >> "$CHECK_LOG"
+        exit 0
+    elif [ "$rc" -eq 0 ]; then
+        echo "RESULT: no updates" >> "$CHECK_LOG"
+        exit 7
+    else
+        echo "RESULT: check error (rc=$rc)" >> "$CHECK_LOG"
+        exit 7
+    fi
+else
+    echo "MODE=UPGRADE" >> "$DEBUG_LOG"
+
+    rm -f /tmp/upgrade-check
+
+    _upgrade
+
+    # If for some reason upgrade-check wasn't created, don't hang; treat as failure.
+    if [ ! -f /tmp/upgrade-check ]; then
+        echo "upgrade-check missing; treating as failure" >> "$DEBUG_LOG"
+        exit 0
+    fi
+
+    _fake_progress
+
+    UPGRADE_CHECK="$(cat /tmp/upgrade-check 2>/dev/null || echo 1)"
+    rm -f /tmp/upgrade-check
+
+    if [ "$UPGRADE_CHECK" -eq 0 ]; then
+        touch /tmp/upgrade-installed
+    fi
+
+    # Steam expects 0 even if upgrade failed (per your comment)
+    exit 0
+fi

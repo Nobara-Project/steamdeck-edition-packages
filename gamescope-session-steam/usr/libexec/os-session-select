@@ -63,14 +63,14 @@ case "$session" in
   plasma-wayland-persistent)
     if [[ ! -z $(systemctl status gdm | grep running) ]]; then
       session_launcher="gnome-wayland"
-    elif [[ ! -z $(systemctl status sddm | grep running) ]]; then
+    elif [[ ! -z $(systemctl status plasmalogin | grep running) ]]; then
       session_launcher="plasma"
     fi
   ;;
   plasma-x11-persistent)
     if [[ ! -z $(systemctl status gdm | grep running) ]]; then
       session_launcher="gnome-xorg"
-    elif [[ ! -z $(systemctl status sddm | grep running) ]]; then
+    elif [[ ! -z $(systemctl status plasmalogin | grep running) ]]; then
       session_launcher="plasmax11"
     fi
   ;;
@@ -78,13 +78,13 @@ case "$session" in
     if ${DESKTOP_WAYLAND}; then
       if [[ ! -z $(systemctl status gdm | grep running) ]]; then
         session_launcher="gnome-wayland"
-      elif [[ ! -z $(systemctl status sddm | grep running) ]]; then
+      elif [[ ! -z $(systemctl status plasmalogin | grep running) ]]; then
         session_launcher="plasma"
       fi
     else
       if [[ ! -z $(systemctl status gdm | grep running) ]]; then
         session_launcher="gnome-xorg"
-      elif [[ ! -z $(systemctl status sddm | grep running) ]]; then
+      elif [[ ! -z $(systemctl status plasmalogin | grep running) ]]; then
         session_launcher="plasmax11"
       fi
     fi
@@ -171,27 +171,27 @@ if [[ ! -z $(systemctl status gdm | grep running) ]]; then
 fi
 
 
-# KDE/SDDM
-if [[ ! -z $(systemctl status sddm | grep running) ]]; then
-  if [[ -f /etc/sddm.conf ]]; then
+# KDE/plasmalogin
+if [[ ! -z $(systemctl status plasmalogin | grep running) ]]; then
+  if [[ -f /etc/plasmalogin.conf ]]; then
     # set new default session
-    sed -i "s|Session=.*|Session=$session_launcher.desktop|g" /etc/sddm.conf
-    # Relogin is REQUIRED for SDDM to not just boot us to the login screen without relogging
+    sed -i "s|Session=.*|Session=$session_launcher.desktop|g" /etc/plasmalogin.conf
+    # Relogin is REQUIRED for plasmalogin to not just boot us to the login screen without relogging
     # GDM has similar problem needing timedlogin instead of autologin
-    sed -i "s|Relogin=.*|Relogin=true|g" /etc/sddm.conf
-    if [[ -z $(cat /etc/sddm.conf | grep Relogin) ]]; then
-      sed -i '/\[Autologin\]/a\Relogin=true' /etc/sddm.conf
+    sed -i "s|Relogin=.*|Relogin=true|g" /etc/plasmalogin.conf
+    if [[ -z $(cat /etc/plasmalogin.conf | grep Relogin) ]]; then
+      sed -i '/\[Autologin\]/a\Relogin=true' /etc/plasmalogin.conf
     fi
   fi
   # check second location just in case
-  if [[ -f /etc/sddm.conf.d/kde_settings.conf ]]; then
+  if [[ -f /etc/plasmalogin.conf.d/kde_settings.conf ]]; then
     # set new default session
-    sed -i "s|Session=.*|Session=$session_launcher.desktop|g" /etc/sddm.conf.d/kde_settings.conf
-    # Relogin is REQUIRED for SDDM to not just boot us to the login screen without relogging
+    sed -i "s|Session=.*|Session=$session_launcher.desktop|g" /etc/plasmalogin.conf.d/kde_settings.conf
+    # Relogin is REQUIRED for plasmalogin to not just boot us to the login screen without relogging
     # GDM has similar problem needing timedlogin instead of autologin
-    sed -i "s|Relogin=.*|Relogin=true|g" /etc/sddm.conf.d/kde_settings.conf
-    if [[ -z $(cat /etc/sddm.conf.d/kde_settings.conf | grep Relogin) ]]; then
-      sed -i '/\[Autologin\]/a\Relogin=true' /etc/sddm.conf.d/kde_settings.conf
+    sed -i "s|Relogin=.*|Relogin=true|g" /etc/plasmalogin.conf.d/kde_settings.conf
+    if [[ -z $(cat /etc/plasmalogin.conf.d/kde_settings.conf | grep Relogin) ]]; then
+      sed -i '/\[Autologin\]/a\Relogin=true' /etc/plasmalogin.conf.d/kde_settings.conf
     fi
   fi
 fi

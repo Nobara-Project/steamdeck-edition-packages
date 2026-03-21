@@ -47,9 +47,9 @@ if [[ ! -z $(systemctl status gdm | grep running) ]]; then
   # full restart will fail
   systemctl reload gdm
 fi
-# KDE/SDDM
-if [[ ! -z $(systemctl status sddm | grep running) ]]; then
-  systemctl restart sddm
+# KDE/plasmalogin
+if [[ ! -z $(systemctl status plasmalogin | grep running) ]]; then
+  systemctl restart plasmalogin
 fi
 # LightDM (For Chimera)
 if [[ ! -z $(systemctl status lightdm | grep running) ]]; then

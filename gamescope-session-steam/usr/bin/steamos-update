@@ -96,15 +96,15 @@ if [[ -n "${_CHECK}" ]]; then
         exit 7
     fi
 
-    if ! command -v yumex_updater >/dev/null 2>&1; then
-        echo "yumex_updater not found in PATH" >> "$DEBUG_LOG"
+    if ! command -v dnf-app-center-updater >/dev/null 2>&1; then
+        echo "dnf-app-center-updater not found in PATH" >> "$DEBUG_LOG"
         exit 7
     fi
 
-    echo "---- yumex_updater check $(date -Is) ----" >> "$CHECK_LOG"
-    yumex_updater --check --refresh --json >> "$CHECK_LOG" 2>&1
+    echo "---- dnf-app-center-updater check $(date -Is) ----" >> "$CHECK_LOG"
+    dnf-app-center-updater --check --refresh --json >> "$CHECK_LOG" 2>&1
     rc=$?
-    echo "yumex_updater rc=$rc" >> "$CHECK_LOG"
+    echo "dnf-app-center-updater rc=$rc" >> "$CHECK_LOG"
 
     if [ "$rc" -eq 100 ]; then
         echo "RESULT: updates available" >> "$CHECK_LOG"

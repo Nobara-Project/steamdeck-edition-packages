@@ -11,6 +11,9 @@ fi
 if [[ ! -z $(systemctl status gdm | grep running) ]]; then
         exec gnome-session-quit --no-prompt
 fi
+if [[ ! -z $(systemctl status plasmalogin | grep running) ]]; then
+        exec qdbus org.kde.Shutdown /Shutdown org.kde.Shutdown.logout
+fi
 if [[ ! -z $(systemctl status sddm | grep running) ]]; then
         exec qdbus org.kde.Shutdown /Shutdown org.kde.Shutdown.logout
 fi
